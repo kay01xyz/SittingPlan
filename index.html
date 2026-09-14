@@ -1114,39 +1114,54 @@
   </header>
 
   
-  <!-- Privacy Login Gatekeeper (Visible when NOT logged in) -->
-  <div id="loginGatekeeper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 65vh; text-align: center; padding: 40px 20px;">
-    <div style="width: 60px; height: 60px; background: #0f172a; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; box-shadow: 0 8px 20px -4px rgba(15,23,42,0.25); border: 1px solid rgba(255,255,255,0.1);">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Privacy Login Gatekeeper (Email / Password + Google Login) -->
+  <div id="loginGatekeeper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; text-align: center; padding: 30px 20px;">
+    <div style="width: 56px; height: 56px; background: #0f172a; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 8px 20px -4px rgba(15,23,42,0.25); border: 1px solid rgba(255,255,255,0.1);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
     </div>
-    <h2 style="font-size: 1.35rem; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Classroom Seating Portal</h2>
-    <p style="font-size: 0.88rem; color: #64748b; max-width: 440px; margin-bottom: 24px; line-height: 1.6;">
-      為保障學生個人私隱，學生名單與座位表已受保護。<br>請先使用教師 Google 帳號登入以存取你的班級資料。
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Classroom Seating Portal</h2>
+    <p style="font-size: 0.84rem; color: #64748b; max-width: 380px; margin-bottom: 20px; line-height: 1.5;">
+      為保障學生隱私，請先登入你的教師帳戶以存取專屬座位表。
     </p>
-    <button class="btn" onclick="loginWithGoogle()" style="display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px; font-size: 0.92rem; font-weight: 600; border-radius: 9px; background: #0f172a; color: #fff; border: 1px solid #334155; box-shadow: 0 4px 12px rgba(15,23,42,0.18);">
-      <svg width="18" height="18" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-      </svg>
-      <span>Sign in with Google</span>
-    </button>
-  </div>
 
-  <!-- Protected Workspace (Visible ONLY when logged in) -->
-  <div id="protectedWorkspace" style="display: none; flex-direction: column; flex: 1;">
-
-  <!-- Tabs Navigation ("一個tag 一班") -->
-  <div class="tabs-wrapper">
-    <div style="display: flex; align-items: center; flex: 1; overflow-x: auto;">
-      <div class="filter-pills">
-        <div class="filter-pill active" id="pillActive" onclick="setFilter('active')">Active (<span id="activeCount">3</span>)</div>
-        <div class="filter-pill" id="pillArchived" onclick="setFilter('archived')">Archived (<span id="archivedCount">0</span>)</div>
+    <!-- Email Login Card -->
+    <div style="background: white; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 22px 20px; width: 100%; max-width: 360px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); text-align: left;">
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #334155; margin-bottom: 4px;">電子郵件 Email</label>
+        <input type="email" id="authEmailInput" class="form-input" placeholder="例如：teacher@school.edu.hk" style="padding: 8px 10px; font-size: 0.85rem;">
       </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #334155; margin-bottom: 4px;">密碼 Password</label>
+        <input type="password" id="authPasswordInput" class="form-input" placeholder="輸入密碼" style="padding: 8px 10px; font-size: 0.85rem;">
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <button class="btn btn-primary" onclick="loginWithEmail()" style="flex: 1; padding: 8px; font-size: 0.84rem; justify-content: center;">登入 Login</button>
+        <button class="btn btn-secondary" onclick="registerWithEmail()" style="flex: 1; padding: 8px; font-size: 0.84rem; justify-content: center;">註冊 Register</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+        <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+        <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 500;">或使用 Google</span>
+        <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+      </div>
+
+      <!-- Google Button -->
+      <button class="btn" onclick="loginWithGoogle()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; font-size: 0.84rem; font-weight: 600; border-radius: 7px; background: #ffffff; color: #334155; border: 1.5px solid #cbd5e1;">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span>Google 帳號快速登入</span>
+      </button>
+    </div>
+  </div>
 
       <!-- Class Tabs -->
       <div class="tabs-container" id="classTabs"></div>
@@ -1361,7 +1376,7 @@
     
     // Firebase Modular SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // Your Web App's Firebase Configuration
@@ -3410,6 +3425,42 @@
         if (cloudPill) cloudPill.style.display = "none";
       }
     });
+
+    
+    window.loginWithEmail = async function() {
+      const email = document.getElementById("authEmailInput").value.trim();
+      const password = document.getElementById("authPasswordInput").value;
+      if (!email || !password) {
+        alert("請輸入電郵與密碼！");
+        return;
+      }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        console.error("Email login error:", err);
+        alert("登入失敗：" + err.message + "\n\n若是首次使用此電郵，請點擊「註冊 Register」。\n並請確認已在 Firebase Console -> Authentication -> Sign-in method 啟用了「電子郵件/密碼」。");
+      }
+    };
+
+    window.registerWithEmail = async function() {
+      const email = document.getElementById("authEmailInput").value.trim();
+      const password = document.getElementById("authPasswordInput").value;
+      if (!email || !password) {
+        alert("請輸入要註冊的電郵與密碼！");
+        return;
+      }
+      if (password.length < 6) {
+        alert("密碼長度至少需要 6 個字元！");
+        return;
+      }
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        showToast("帳號註冊成功並已自動登入！");
+      } catch (err) {
+        console.error("Email register error:", err);
+        alert("註冊失敗：" + err.message + "\n\n提示：請確認已在 Firebase Console -> Authentication -> Sign-in method 啟用了「電子郵件/密碼」。");
+      }
+    };
 
     window.loginWithGoogle = async function() {
       try {
