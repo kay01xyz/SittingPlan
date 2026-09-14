@@ -2,25 +2,16 @@
   {
     "id": "class_apl6",
     "name": "APL 6th",
-    "room": "RM 302",
+    "room": "課室 A (小組討論室)",
     "status": "active",
-    "template": "POD-3S",
-    "layoutConfig": {
-      "type": "pods",
-      "sections": 3,
-      "sectionGroups": [
-        3,
-        3,
-        2
-      ],
-      "teacherDesk": "BR"
-    },
+    "layoutType": "group_3col_right_teacher",
+    "teacherPosition": "bottom_right",
     "groups": [
       {
-        "id": "g_l1",
-        "name": "G1",
-        "section": "Left",
-        "pos": "Back",
+        "id": "g_left_back",
+        "name": "第 1 組 (左後)",
+        "col": "left",
+        "pos": "back",
         "students": [
           {
             "id": "s_apl_13",
@@ -49,10 +40,10 @@
         ]
       },
       {
-        "id": "g_l2",
-        "name": "G2",
-        "section": "Left",
-        "pos": "Mid",
+        "id": "g_left_mid",
+        "name": "第 2 組 (左中)",
+        "col": "left",
+        "pos": "mid",
         "students": [
           {
             "id": "s_apl_17",
@@ -87,10 +78,10 @@
         ]
       },
       {
-        "id": "g_l3",
-        "name": "G3",
-        "section": "Left",
-        "pos": "Front",
+        "id": "g_left_front",
+        "name": "第 3 組 (左前)",
+        "col": "left",
+        "pos": "front",
         "students": [
           {
             "id": "s_apl_22",
@@ -131,10 +122,10 @@
         ]
       },
       {
-        "id": "g_m1",
-        "name": "G4",
-        "section": "Center",
-        "pos": "Back",
+        "id": "g_mid_back",
+        "name": "第 4 組 (中後)",
+        "col": "middle",
+        "pos": "back",
         "students": [
           {
             "id": "s_apl_1",
@@ -163,10 +154,10 @@
         ]
       },
       {
-        "id": "g_m2",
-        "name": "G5",
-        "section": "Center",
-        "pos": "Mid",
+        "id": "g_mid_mid",
+        "name": "第 5 組 (中中)",
+        "col": "middle",
+        "pos": "mid",
         "students": [
           {
             "id": "s_apl_5",
@@ -189,10 +180,10 @@
         ]
       },
       {
-        "id": "g_m3",
-        "name": "G6",
-        "section": "Center",
-        "pos": "Front",
+        "id": "g_mid_front",
+        "name": "第 6 組 (中前)",
+        "col": "middle",
+        "pos": "front",
         "students": [
           {
             "id": "s_apl_8",
@@ -227,10 +218,10 @@
         ]
       },
       {
-        "id": "g_r1",
-        "name": "G7",
-        "section": "Right",
-        "pos": "Back",
+        "id": "g_right_back",
+        "name": "第 7 組 (右後)",
+        "col": "right",
+        "pos": "back",
         "students": [
           {
             "id": "s_apl_31",
@@ -247,10 +238,10 @@
         ]
       },
       {
-        "id": "g_r2",
-        "name": "G8",
-        "section": "Right",
-        "pos": "Front",
+        "id": "g_right_front",
+        "name": "第 8 組 (右前 / 老師枱前)",
+        "col": "right",
+        "pos": "front",
         "students": [
           {
             "id": "s_apl_28",
@@ -274,33 +265,40 @@
       }
     ],
     "unassigned": [],
-    "snapshots": []
+    "snapshots": [],
+    "template": "POD-3S",
+    "layoutConfig": {
+      "type": "pods",
+      "sections": 3,
+      "sectionGroups": [
+        3,
+        3,
+        2
+      ],
+      "teacherDesk": "BR"
+    }
   },
   {
     "id": "class_dae4",
     "name": "DAE 4",
-    "room": "RM 105",
+    "room": "標準課室 1 (2-2-2格局 5行8列)",
     "status": "active",
-    "template": "PAIR-ROW",
-    "layoutConfig": {
-      "type": "grid",
-      "rows": 5,
-      "cols": 8,
-      "pattern": "paired_aisle",
-      "aisles": [
-        "0-2",
-        "1-2",
-        "2-2",
-        "3-2",
-        "4-2",
-        "0-5",
-        "1-5",
-        "2-5",
-        "3-5",
-        "4-5"
-      ],
-      "teacherDesk": "BC"
-    },
+    "layoutType": "grid",
+    "rows": 5,
+    "cols": 8,
+    "aisles": [
+      "0-2",
+      "1-2",
+      "2-2",
+      "3-2",
+      "4-2",
+      "0-5",
+      "1-5",
+      "2-5",
+      "3-5",
+      "4-5"
+    ],
+    "teacherPosition": "bottom",
     "seats": {
       "0-0": {
         "id": "s_dae4_1",
@@ -448,33 +446,40 @@
       }
     },
     "unassigned": [],
-    "snapshots": []
+    "snapshots": [],
+    "template": "PAIR-ROW",
+    "layoutConfig": {
+      "type": "grid",
+      "rows": 4,
+      "cols": 7,
+      "aisles": [
+        2,
+        5
+      ],
+      "teacherDesk": "front"
+    }
   },
   {
     "id": "class_dae5",
     "name": "DAE 5",
-    "room": "RM 106",
+    "room": "標準課室 2 (2-2-2格局 5行8列)",
     "status": "active",
-    "template": "PAIR-ROW",
-    "layoutConfig": {
-      "type": "grid",
-      "rows": 5,
-      "cols": 8,
-      "pattern": "paired_aisle",
-      "aisles": [
-        "0-2",
-        "1-2",
-        "2-2",
-        "3-2",
-        "4-2",
-        "0-5",
-        "1-5",
-        "2-5",
-        "3-5",
-        "4-5"
-      ],
-      "teacherDesk": "BC"
-    },
+    "layoutType": "grid",
+    "rows": 5,
+    "cols": 8,
+    "aisles": [
+      "0-2",
+      "1-2",
+      "2-2",
+      "3-2",
+      "4-2",
+      "0-5",
+      "1-5",
+      "2-5",
+      "3-5",
+      "4-5"
+    ],
+    "teacherPosition": "bottom",
     "seats": {
       "0-1": {
         "id": "s_dae5_1",
@@ -640,6 +645,17 @@
       }
     },
     "unassigned": [],
-    "snapshots": []
+    "snapshots": [],
+    "template": "PAIR-ROW",
+    "layoutConfig": {
+      "type": "grid",
+      "rows": 5,
+      "cols": 7,
+      "aisles": [
+        2,
+        5
+      ],
+      "teacherDesk": "front"
+    }
   }
 ]
