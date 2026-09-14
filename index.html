@@ -957,6 +957,19 @@
       </div>
     </div>
     <div class="header-right">
+      
+      <span id="cloudStatusPill" style="display:none; font-size: 0.72rem; color: #16a34a; font-weight: 600; padding: 3px 8px; background: #dcfce7; border-radius: 6px;">☁️ Synced</span>
+      <div id="authSection" style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn btn-primary btn-sm" id="loginBtn" onclick="loginWithGoogle()">
+          <span>🔑</span> <span>Teacher Login</span>
+        </button>
+        <div id="userProfile" style="display: none; align-items: center; gap: 8px;">
+          <img id="userAvatar" src="" style="width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #cbd5e1;" alt="Avatar">
+          <span id="userName" style="font-size: 0.78rem; font-weight: 700; color: #1e293b; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Teacher</span>
+          <button class="btn btn-secondary btn-sm" onclick="logoutTeacher()" style="padding: 3px 7px; font-size: 0.72rem;">Logout</button>
+        </div>
+      </div>
+
       <button class="btn btn-secondary btn-sm" onclick="toggleSidebar()" id="sidebarToggleBtn" title="展開或收合側邊欄">📋 Sidebar</button>
       <button class="btn btn-secondary btn-sm" onclick="printSeatingChart()" title="列印或另存為 PDF">🖨️ Print / PDF</button>
       <button class="btn btn-secondary btn-sm" onclick="exportData()" title="備份資料為 JSON 檔案">📥 Export Backup</button>
@@ -1180,7 +1193,29 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script>
+  <script type="module">
+    
+    // Firebase Modular SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Your Web App's Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4o7QQMx2MyS8FcHg2U1pPZWRCDPwsGw4",
+      authDomain: "sittingplan-71841.firebaseapp.com",
+      projectId: "sittingplan-71841",
+      storageBucket: "sittingplan-71841.firebasestorage.app",
+      messagingSenderId: "1071458786828",
+      appId: "1:1071458786828:web:351b49276de7c37666d829"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
+    let currentUser = null;
+
     // Initial Data V6
     const DEFAULT_CLASSES = [
   {
@@ -1865,9 +1900,41 @@
       setupTouchDragSupport();
     }
 
-    function saveState() {
+    async function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(classes));
       updateCounts();
+
+      if (currentUser) {
+        const cloudPill = document.getElementById("cloudStatusPill");
+        if (cloudPill) {
+          cloudPill.style.display = "inline-flex";
+          cloudPill.textContent = "☁️ Saving...";
+          cloudPill.style.color = "#d97706";
+          cloudPill.style.background = "#fef3c7";
+        }
+        try {
+          const userRef = doc(db, "teachers", currentUser.uid);
+          await setDoc(userRef, {
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            updatedAt: new Date().toISOString(),
+            classes: classes
+          }, { merge: true });
+
+          if (cloudPill) {
+            cloudPill.textContent = "☁️ Synced";
+            cloudPill.style.color = "#15803d";
+            cloudPill.style.background = "#dcfce7";
+          }
+        } catch (err) {
+          console.warn("Cloud save warning:", err);
+          if (cloudPill) {
+            cloudPill.textContent = "⚠️ Offline Mode";
+            cloudPill.style.color = "#b91c1c";
+            cloudPill.style.background = "#fee2e2";
+          }
+        }
+      }
     }
 
     function showToast(msg) {
@@ -3542,6 +3609,108 @@
       reader.readAsText(file);
       event.target.value = "";
     }
+
+    
+    // Google Auth Listeners & Multi-Teacher Database Routing
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      const loginBtn = document.getElementById("loginBtn");
+      const userProfile = document.getElementById("userProfile");
+      const userAvatar = document.getElementById("userAvatar");
+      const userName = document.getElementById("userName");
+      const cloudPill = document.getElementById("cloudStatusPill");
+
+      if (user) {
+        loginBtn.style.display = "none";
+        userProfile.style.display = "flex";
+        userName.textContent = user.displayName || user.email.split("@")[0];
+        userAvatar.src = user.photoURL || "https://www.gravatar.com/avatar/?d=mp";
+        if (cloudPill) cloudPill.style.display = "inline-flex";
+
+        showToast(`Signed in as: ${userName.textContent}`);
+
+        try {
+          const userRef = doc(db, "teachers", user.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists() && snap.data().classes && snap.data().classes.length > 0) {
+            classes = snap.data().classes;
+            currentClassId = classes[0]?.id || "";
+            showToast("Your private cloud classes loaded successfully!");
+          } else {
+            classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+            currentClassId = classes[0]?.id || "";
+            await setDoc(userRef, {
+              email: user.email,
+              displayName: user.displayName,
+              updatedAt: new Date().toISOString(),
+              classes: classes
+            });
+            showToast("Initialized with your default class templates!");
+          }
+        } catch (err) {
+          console.error("Firestore error:", err);
+          showToast("Loaded local database. Tip: Ensure Firestore is created in test mode.");
+        }
+
+        renderTabs();
+        renderCurrentClass();
+      } else {
+        loginBtn.style.display = "inline-flex";
+        userProfile.style.display = "none";
+        if (cloudPill) cloudPill.style.display = "none";
+      }
+    });
+
+    window.loginWithGoogle = async function() {
+      try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (err) {
+        console.error("Login error:", err);
+        alert("Login failed: " + err.message + "\n\nTip: If hosting on GitHub Pages, remember to add your domain (e.g. kay01xyz.github.io) in Firebase Console -> Authentication -> Settings -> Authorized domains.");
+      }
+    };
+
+    window.logoutTeacher = async function() {
+      if (confirm("Are you sure you want to sign out?")) {
+        await signOut(auth);
+        currentUser = null;
+        showToast("Signed out.");
+      }
+    };
+
+    
+    window.setFilter = setFilter;
+    window.switchClass = switchClass;
+    window.toggleSidebar = toggleSidebar;
+    window.adjustZoom = adjustZoom;
+    window.resetZoom = resetZoom;
+    window.openLayoutStudioModal = openLayoutStudioModal;
+    window.selectStudioTemplate = selectStudioTemplate;
+    window.applyStudioLayout = applyStudioLayout;
+    window.setInteractionMode = setInteractionMode;
+    window.handleSearch = handleSearch;
+    window.markAllPresent = markAllPresent;
+    window.saveLessonSnapshot = saveLessonSnapshot;
+    window.loadSnapshot = loadSnapshot;
+    window.deleteSnapshot = deleteSnapshot;
+    window.resetToBaseSeating = resetToBaseSeating;
+    window.saveCurrentAsMaster = saveCurrentAsMaster;
+    window.checkGitHubSync = checkGitHubSync;
+    window.toggleArchiveCurrentClass = toggleArchiveCurrentClass;
+    window.openNewClassModal = openNewClassModal;
+    window.submitNewClass = submitNewClass;
+    window.openAddStudentModal = openAddStudentModal;
+    window.submitAddStudent = submitAddStudent;
+    window.printSeatingChart = printSeatingChart;
+    window.exportData = exportData;
+    window.triggerImport = triggerImport;
+    window.importData = importData;
+    window.closeModal = closeModal;
+    window.renameGroup = renameGroup;
+    window.addStudentToGroup = addStudentToGroup;
+    window.markGroupPresent = markGroupPresent;
+    window.removeUnassignedStudent = removeUnassignedStudent;
+    window.clearSelection = clearSelection;
 
     window.addEventListener("DOMContentLoaded", init);
   </script>
