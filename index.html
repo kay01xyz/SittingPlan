@@ -1257,7 +1257,6 @@
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <button class="btn btn-secondary btn-sm" onclick="markAllPresent()" style="width: 100%;">✅ Mark All Present</button>
           <button class="btn btn-secondary btn-sm" onclick="saveCurrentAsMaster()" style="width: 100%;">⭐ Set as Master Default</button>
-          <button class="btn btn-secondary btn-sm" onclick="restoreFullMasterRoster()" style="width: 100%; color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; font-weight: 600;" title="一鍵載入全部 3 班共 83 位學生名單">👥 載入初始全班名單 (83人)</button>
           <button class="btn btn-secondary btn-sm" onclick="checkGitHubSync()" style="width: 100%;" title="若有放在 GitHub Pages，點擊從同目錄載入 classes_backup.json">☁️ Sync from Server</button>
         </div>
       </div>
@@ -1445,7 +1444,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Left"
       },
       {
         "id": "g_left_mid",
@@ -1483,7 +1483,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Left"
       },
       {
         "id": "g_left_front",
@@ -1527,7 +1528,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Left"
       },
       {
         "id": "g_mid_back",
@@ -1559,7 +1561,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Center"
       },
       {
         "id": "g_mid_mid",
@@ -1585,7 +1588,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Center"
       },
       {
         "id": "g_mid_front",
@@ -1623,7 +1627,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Center"
       },
       {
         "id": "g_right_back",
@@ -1643,7 +1648,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Right"
       },
       {
         "id": "g_right_front",
@@ -1669,7 +1675,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Right"
       }
     ],
     "unassigned": [],
@@ -2068,6 +2075,53 @@
   }
 ];
 
+    
+    function getGroupSection(g, idx, total) {
+      if (g.section) {
+        const s = g.section.toLowerCase();
+        if (s.includes("left")) return "Left";
+        if (s.includes("mid") || s.includes("center")) return "Center";
+        if (s.includes("right")) return "Right";
+      }
+      if (g.col) {
+        const c = g.col.toLowerCase();
+        if (c.includes("left")) return "Left";
+        if (c.includes("mid") || c.includes("center")) return "Center";
+        if (c.includes("right")) return "Right";
+      }
+      if (g.id) {
+        const id = g.id.toLowerCase();
+        if (id.includes("left")) return "Left";
+        if (id.includes("mid") || id.includes("center")) return "Center";
+        if (id.includes("right")) return "Right";
+      }
+      if (g.name) {
+        const n = g.name.toLowerCase();
+        if (n.includes("左")) return "Left";
+        if (n.includes("中")) return "Center";
+        if (n.includes("右")) return "Right";
+      }
+      if (total <= 4) {
+        return idx < Math.ceil(total / 2) ? "Left" : "Right";
+      }
+      if (idx < 3) return "Left";
+      if (idx < 6) return "Center";
+      return "Right";
+    }
+
+    function sanitizeClasses(clsList) {
+      if (!Array.isArray(clsList)) return clsList;
+      clsList.forEach(cls => {
+        if (cls.groups && Array.isArray(cls.groups)) {
+          cls.groups.forEach((g, idx) => {
+            g.section = getGroupSection(g, idx, cls.groups.length);
+            g.col = g.section === "Left" ? "left" : (g.section === "Center" ? "middle" : "right");
+          });
+        }
+      });
+      return clsList;
+    }
+
     // State
     let classes = [];
     let currentClassId = "class_apl6";
@@ -2087,12 +2141,12 @@
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          classes = JSON.parse(saved);
+          classes = sanitizeClasses(JSON.parse(saved));
         } catch (e) {
-          classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+          classes = sanitizeClasses(JSON.parse(JSON.stringify(DEFAULT_CLASSES)));
         }
       } else {
-        classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+        classes = sanitizeClasses(JSON.parse(JSON.stringify(DEFAULT_CLASSES)));
         saveState();
       }
 
@@ -2379,17 +2433,23 @@
       const sections = cls.layoutConfig.sections || 3;
       const teacherDesk = cls.layoutConfig.teacherDesk || "BR";
 
+      // Ensure all groups have correct section mapping
+      groups.forEach((g, idx) => {
+        g.section = getGroupSection(g, idx, groups.length);
+        g.col = g.section === "Left" ? "left" : (g.section === "Center" ? "middle" : "right");
+      });
+
       let sectionCols = [];
       if (sections === 3) {
         sectionCols = [
-          { key: "Left", title: "Left", groups: groups.filter(g => g.section === "Left") },
-          { key: "Center", title: "Center", groups: groups.filter(g => g.section === "Center") },
-          { key: "Right", title: "Right", groups: groups.filter(g => g.section === "Right") }
+          { key: "Left", title: "Left", groups: groups.filter(g => getGroupSection(g) === "Left") },
+          { key: "Center", title: "Center", groups: groups.filter(g => getGroupSection(g) === "Center") },
+          { key: "Right", title: "Right", groups: groups.filter(g => getGroupSection(g) === "Right") }
         ];
       } else {
         sectionCols = [
-          { key: "Left", title: "Left", groups: groups.filter(g => g.section === "Left") },
-          { key: "Right", title: "Right", groups: groups.filter(g => g.section === "Right") }
+          { key: "Left", title: "Left", groups: groups.filter(g => getGroupSection(g) === "Left") },
+          { key: "Right", title: "Right", groups: groups.filter(g => getGroupSection(g) === "Right") }
         ];
       }
 
@@ -3625,7 +3685,7 @@
     
     window.restoreFullMasterRoster = async function() {
       if (!confirm("確定要載入全部 3 班（共 83 位學生）的預設名單嗎？\n這將會同步更新至你的專屬雲端帳戶。")) return;
-      classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+      classes = sanitizeClasses(JSON.parse(JSON.stringify(DEFAULT_CLASSES)));
       currentClassId = classes[0]?.id || "";
       await saveState();
       renderTabs();
@@ -3673,7 +3733,7 @@
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
             if (confirm(`Loaded classes_backup.json with ${data.length} classes. Sync now?`)) {
-              classes = data;
+              classes = sanitizeClasses(data);
               currentClassId = classes[0].id;
               saveState();
               renderTabs();
@@ -3902,7 +3962,7 @@
           const data = JSON.parse(e.target.result);
           if (Array.isArray(data) && data.length > 0 && data[0].id) {
             if (confirm(`偵測到備份檔案包含 ${data.length} 個班級，確定要匯入嗎？`)) {
-              classes = data;
+              classes = sanitizeClasses(data);
               currentClassId = classes[0].id;
               await saveState();
               renderTabs();
@@ -3950,7 +4010,7 @@
           const userRef = doc(db, "teachers", user.uid);
           const snap = await getDoc(userRef);
           if (snap.exists() && snap.data().classes && snap.data().classes.length > 0) {
-            classes = snap.data().classes;
+            classes = sanitizeClasses(snap.data().classes);
             currentClassId = classes[0]?.id || "";
             showToast("已成功載入你的專屬雲端班級座位表記錄！");
           } else {
@@ -3973,7 +4033,7 @@
 
             if (!hasLocalData) {
               // Use default master classes (APL 6th, DAE 4, DAE 5 with all 83 students)
-              classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+              classes = sanitizeClasses(JSON.parse(JSON.stringify(DEFAULT_CLASSES)));
             }
 
             currentClassId = classes[0]?.id || "";
@@ -3999,6 +4059,17 @@
     });
 
     
+    
+    window.showCloudStatusHelp = function() {
+      const pill = document.getElementById("cloudStatusPill");
+      const isOffline = pill && pill.textContent.includes("Offline");
+      if (isOffline) {
+        alert("【⚠️ 目前為本機離線保存模式】\n\n你的座位表與學生名單已完整保存在這台電腦的瀏覽器中 (Local Storage)，重新整理不會遺失！\n\n【如何啟用跨電腦雲端同步？】\n通常是因為 Firebase Firestore 資料庫的安全規則 (Rules) 尚未開放寫入權限：\n1. 前往 Firebase 控制台 (console.firebase.google.com)\n2. 點選專案 sittingplan-71841 -> Firestore Database -> Rules 分頁\n3. 將規則改為 allow read, write: if request.auth != null; 並發布\n發布後重新整理網頁，即可顯示 ☁️ Synced 綠燈雲端同步！");
+      } else {
+        alert("【☁️ 雲端同步正常 (Synced)】\n\n你的班級座位表已即時備份至 Google Cloud Firestore 資料庫，在不同電腦或手機登入你的帳號皆會自動同步最新記錄！");
+      }
+    };
+
     window.loginWithEmail = async function() {
       const email = document.getElementById("authEmailInput").value.trim();
       const password = document.getElementById("authPasswordInput").value;
