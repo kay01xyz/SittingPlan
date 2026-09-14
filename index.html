@@ -1865,11 +1865,19 @@
     "template": "PAIR-ROW",
     "layoutConfig": {
       "type": "grid",
-      "rows": 4,
-      "cols": 7,
+      "rows": 5,
+      "cols": 8,
       "aisles": [
-        2,
-        5
+        "0-2",
+        "1-2",
+        "2-2",
+        "3-2",
+        "4-2",
+        "0-5",
+        "1-5",
+        "2-5",
+        "3-5",
+        "4-5"
       ],
       "teacherDesk": "front"
     }
@@ -2065,17 +2073,24 @@
     "layoutConfig": {
       "type": "grid",
       "rows": 5,
-      "cols": 7,
+      "cols": 8,
       "aisles": [
-        2,
-        5
+        "0-2",
+        "1-2",
+        "2-2",
+        "3-2",
+        "4-2",
+        "0-5",
+        "1-5",
+        "2-5",
+        "3-5",
+        "4-5"
       ],
       "teacherDesk": "front"
     }
   }
 ];
 
-    
     function getGroupSection(g, idx, total) {
       if (g.section) {
         const s = g.section.toLowerCase();
@@ -2112,11 +2127,50 @@
     function sanitizeClasses(clsList) {
       if (!Array.isArray(clsList)) return clsList;
       clsList.forEach(cls => {
+        // 1. Handle Pods layout (APL)
         if (cls.groups && Array.isArray(cls.groups)) {
+          if (!cls.layoutConfig) {
+            cls.layoutConfig = { type: "pods", sections: 3, sectionGroups: [3, 3, 2], teacherDesk: "BR" };
+          }
           cls.groups.forEach((g, idx) => {
             g.section = getGroupSection(g, idx, cls.groups.length);
             g.col = g.section === "Left" ? "left" : (g.section === "Center" ? "middle" : "right");
           });
+        }
+
+        // 2. Handle Grid layout (DAE 4, DAE 5)
+        if (cls.seats && typeof cls.seats === "object") {
+          if (!cls.layoutConfig) cls.layoutConfig = { type: "grid" };
+          cls.layoutConfig.type = "grid";
+          cls.template = cls.template || "PAIR-ROW";
+
+          // Auto-calculate rows and cols to guarantee zero cut-off
+          let maxR = 4;
+          let maxC = 7;
+          Object.keys(cls.seats).forEach(coord => {
+            const parts = coord.split("-");
+            if (parts.length === 2) {
+              const r = parseInt(parts[0], 10);
+              const c = parseInt(parts[1], 10);
+              if (!isNaN(r) && r > maxR) maxR = r;
+              if (!isNaN(c) && c > maxC) maxC = c;
+            }
+          });
+
+          cls.layoutConfig.rows = Math.max(5, maxR + 1);
+          cls.layoutConfig.cols = Math.max(8, maxC + 1);
+          cls.rows = cls.layoutConfig.rows;
+          cls.cols = cls.layoutConfig.cols;
+
+          // Standard 5x8 dual aisles: column 2 and column 5
+          const defaultAisles = [
+            "0-2","1-2","2-2","3-2","4-2",
+            "0-5","1-5","2-5","3-5","4-5"
+          ];
+          if (!cls.layoutConfig.aisles || !Array.isArray(cls.layoutConfig.aisles) || typeof cls.layoutConfig.aisles[0] === 'number') {
+            cls.layoutConfig.aisles = defaultAisles;
+          }
+          cls.aisles = cls.layoutConfig.aisles;
         }
       });
       return clsList;
@@ -2559,9 +2613,12 @@
       const wrap = document.createElement("div");
       wrap.className = "grid-wrap";
 
-      const rows = cls.layoutConfig.rows || 5;
-      const cols = cls.layoutConfig.cols || 8;
-      const aisles = cls.layoutConfig.aisles || [];
+      // Robust fallback for DAE
+      const rows = (cls.layoutConfig && cls.layoutConfig.rows) || cls.rows || 5;
+      const cols = (cls.layoutConfig && cls.layoutConfig.cols) || cls.cols || 8;
+      const aisles = (cls.layoutConfig && cls.layoutConfig.aisles) || cls.aisles || [
+        "0-2","1-2","2-2","3-2","4-2","0-5","1-5","2-5","3-5","4-5"
+      ];
 
       // Column Header row
       const colHeaders = document.createElement("div");
@@ -2591,7 +2648,7 @@
 
         for (let c = 0; c < cols; c++) {
           const coord = `${r}-${c}`;
-          const isAisle = aisles.includes(coord);
+          const isAisle = aisles.includes(coord) || aisles.includes(c) || ((c === 2 || c === 5) && !cls.seats?.[coord]);
           const student = (cls.seats || {})[coord];
 
           const cell = document.createElement("div");

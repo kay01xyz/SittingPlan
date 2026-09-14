@@ -37,7 +37,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Left"
       },
       {
         "id": "g_left_mid",
@@ -75,7 +76,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Left"
       },
       {
         "id": "g_left_front",
@@ -119,7 +121,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Left"
       },
       {
         "id": "g_mid_back",
@@ -151,7 +154,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Center"
       },
       {
         "id": "g_mid_mid",
@@ -177,7 +181,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Center"
       },
       {
         "id": "g_mid_front",
@@ -215,7 +220,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Center"
       },
       {
         "id": "g_right_back",
@@ -235,7 +241,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Right"
       },
       {
         "id": "g_right_front",
@@ -261,7 +268,8 @@
             "tag": "",
             "status": "present"
           }
-        ]
+        ],
+        "section": "Right"
       }
     ],
     "unassigned": [],
@@ -450,11 +458,19 @@
     "template": "PAIR-ROW",
     "layoutConfig": {
       "type": "grid",
-      "rows": 4,
-      "cols": 7,
+      "rows": 5,
+      "cols": 8,
       "aisles": [
-        2,
-        5
+        "0-2",
+        "1-2",
+        "2-2",
+        "3-2",
+        "4-2",
+        "0-5",
+        "1-5",
+        "2-5",
+        "3-5",
+        "4-5"
       ],
       "teacherDesk": "front"
     }
@@ -650,10 +666,18 @@
     "layoutConfig": {
       "type": "grid",
       "rows": 5,
-      "cols": 7,
+      "cols": 8,
       "aisles": [
-        2,
-        5
+        "0-2",
+        "1-2",
+        "2-2",
+        "3-2",
+        "4-2",
+        "0-5",
+        "1-5",
+        "2-5",
+        "3-5",
+        "4-5"
       ],
       "teacherDesk": "front"
     }
