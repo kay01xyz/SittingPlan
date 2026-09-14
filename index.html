@@ -1,0 +1,3549 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classroom Seating Master V6</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --purple: #7c3aed;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+      --desk-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "PingFang SC", "Microsoft JhengHei", sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Nav */
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #1e293b, #3b82f6);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+
+    .app-title h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      letter-spacing: -0.01em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #fff; border-color: var(--gray-300); color: var(--gray-700); }
+    .btn-secondary:hover { background: var(--gray-100); border-color: var(--gray-400); }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: #fff; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger-outline { background: transparent; border-color: #fca5a5; color: var(--danger); }
+    .btn-danger-outline:hover { background: #fef2f2; }
+    .btn-sm { padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; }
+
+    /* Tabs Bar ("一個tag 一班") */
+    .tabs-wrapper {
+      background: #ffffff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      overflow-x: auto;
+    }
+
+    .tabs-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding-top: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-container::-webkit-scrollbar { display: none; }
+
+    .filter-pills {
+      display: flex;
+      background: var(--gray-100);
+      padding: 2px;
+      border-radius: 7px;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .filter-pill {
+      padding: 4px 9px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-pill.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .tab-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 15px;
+      border-top-left-radius: 9px;
+      border-top-right-radius: 9px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      background: transparent;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      position: relative;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab-item:hover {
+      color: var(--primary);
+      background: var(--gray-50);
+    }
+
+    .tab-item.active {
+      color: var(--primary);
+      background: #f8fafc;
+      border-color: var(--gray-200);
+    }
+
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #f8fafc;
+    }
+
+    .tab-badge {
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: var(--gray-200);
+      color: var(--gray-700);
+      font-weight: 500;
+    }
+
+    .tab-item.active .tab-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .tab-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-top: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Sub-bar: CLEAN & SLEEK (NO CLUNKY LABELS WHATSOEVER) */
+    .sub-bar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .stats-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+
+    .stat-pill {
+      background: var(--gray-100);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      color: var(--gray-700);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-pill.success { background: #dcfce7; color: #15803d; }
+    .stat-pill.danger { background: #fee2e2; color: #b91c1c; }
+    .stat-pill.warning { background: #fef3c7; color: #b45309; }
+
+    .control-tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .mode-group {
+      display: flex;
+      background: var(--gray-100);
+      padding: 2px;
+      border-radius: 6px;
+    }
+
+    .mode-btn {
+      padding: 4px 9px;
+      border-radius: 5px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--gray-600);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .mode-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      font-weight: 600;
+    }
+
+    /* Main Container */
+    .app-main {
+      flex: 1;
+      display: flex;
+      padding: 14px 20px;
+      gap: 16px;
+      width: 100%;
+      max-width: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .view-panel {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--card-shadow);
+      padding: 18px;
+      overflow-x: auto;
+      transition: all 0.2s;
+    }
+
+    .scalable-content {
+      width: 100%;
+      transform-origin: top center;
+      transition: transform 0.15s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .back-wall-indicator {
+      width: 100%;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #94a3b8;
+      padding: 4px;
+      margin-bottom: 12px;
+      border-bottom: 1.5px dashed #e2e8f0;
+      letter-spacing: 0.05em;
+    }
+
+    /* Teacher Podium at Bottom */
+    .bottom-podium-full {
+      width: 100%;
+      max-width: 850px;
+      margin: 20px auto 4px auto;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: white;
+      text-align: center;
+      padding: 10px 20px;
+      border-radius: 9px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 0.92rem;
+      border: 1.5px solid #475569;
+    }
+
+    /* ============================================================ */
+    /* 1. POD LAYOUT: POD-3S & POD-2S (小組圍位)                     */
+    /* ============================================================ */
+    .pods-container {
+      display: grid;
+      gap: 16px;
+      width: 100%;
+      max-width: 1350px;
+      margin: 0 auto;
+    }
+
+    .pods-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f8fafc;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .pods-col.has-teacher {
+      border-color: #fde68a;
+      background: #fffdf5;
+    }
+
+    .pods-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    /* Group Card */
+    .group-card {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      transition: all 0.15s ease;
+      min-height: 105px;
+      box-shadow: var(--desk-shadow);
+    }
+
+    .group-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 5px 10px -2px rgba(37,99,235,0.1);
+    }
+
+    .group-card.drag-target {
+      border-color: #10b981 !important;
+      background: #ecfdf5 !important;
+      outline: 2px dashed #10b981;
+      transform: scale(1.02);
+    }
+
+    .group-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 5px;
+    }
+
+    .group-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+    }
+
+    .group-count-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .group-tools {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .group-tool-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.74rem;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+    .group-tool-btn:hover { background: #f1f5f9; color: #1e293b; }
+
+    .group-students-flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 38px;
+      align-content: flex-start;
+    }
+
+    .group-empty-hint {
+      width: 100%;
+      height: 42px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.73rem;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    /* Teacher Desk Inside Pods Column (e.g. BR) */
+    .pods-teacher-desk {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: white;
+      border-radius: 8px;
+      padding: 14px 10px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border: 1.5px solid #f59e0b;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
+      margin-top: auto;
+    }
+
+    .pods-teacher-desk .desk-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .pods-teacher-desk .desk-subtitle {
+      font-size: 0.7rem;
+      color: #fbbf24;
+    }
+
+    /* Student Card inside Group */
+    .student-card {
+      background: white;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 4px 7px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: grab;
+      user-select: none;
+      transition: all 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .student-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 3px 6px rgba(37,99,235,0.12);
+      transform: translateY(-1px);
+    }
+
+    .student-card:active { cursor: grabbing; }
+
+    .student-card.selected {
+      border-color: #2563eb !important;
+      background: #eff6ff !important;
+      outline: 2px solid rgba(37, 99, 235, 0.4);
+      transform: scale(1.04);
+      z-index: 10;
+    }
+
+    .student-card.status-absent {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      opacity: 0.7;
+    }
+
+    .student-name-text {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #1e293b;
+      white-space: nowrap;
+    }
+
+    /* ============================================================ */
+    /* 2. GRID LAYOUT: PAIR-ROW, SEC-ROW, LINE-ROW                  */
+    /* ============================================================ */
+    .grid-wrap {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .grid-col-headers {
+      display: grid;
+      gap: 7px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      padding: 0 4px;
+    }
+
+    .grid-col-header.aisle {
+      color: #d97706;
+      background: #fffbeb;
+      border-radius: 4px;
+      padding: 2px 0;
+    }
+
+    .grid-row {
+      display: grid;
+      gap: 7px;
+      align-items: stretch;
+    }
+
+    .grid-row-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      background: #f1f5f9;
+      border-radius: 6px;
+      user-select: none;
+      padding: 3px;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* Desk Cell */
+    .desk-cell {
+      width: 100%;
+      min-height: 80px;
+      border-radius: 7px;
+      background: #ffffff;
+      border: 1.5px solid var(--gray-300);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5px;
+      position: relative;
+      transition: all 0.15s ease;
+      user-select: none;
+      box-shadow: var(--desk-shadow);
+      min-width: 0;
+    }
+
+    .desk-cell:hover { border-color: var(--primary); }
+
+    .desk-cell.empty {
+      background: #f8fafc;
+      border: 1.5px dashed var(--gray-300);
+      color: var(--gray-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .desk-cell.empty:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .desk-cell.aisle {
+      background: #f8fafc;
+      border: 1.5px dashed #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #b45309;
+      font-size: 0.72rem;
+      opacity: 0.7;
+      cursor: pointer;
+    }
+    .desk-cell.aisle:hover {
+      opacity: 1;
+      border-color: var(--warning);
+      background: #fffbeb;
+    }
+
+    .desk-cell.selected {
+      border-color: #2563eb !important;
+      background: #eff6ff !important;
+      outline: 2px solid rgba(37, 99, 235, 0.4);
+      transform: scale(1.02);
+      z-index: 5;
+    }
+
+    .desk-cell.drag-over {
+      border-color: #10b981 !important;
+      background: #ecfdf5 !important;
+      transform: scale(1.03);
+      outline: 2px dashed #10b981;
+    }
+
+    .desk-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .seat-coord {
+      font-size: 0.65rem;
+      color: var(--gray-600);
+      font-weight: 600;
+    }
+
+    .desk-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      flex-shrink: 0;
+    }
+    .desk-status-dot.absent { background: #ef4444; }
+    .desk-status-dot.late { background: #f59e0b; }
+    .desk-status-dot.leave { background: #8b5cf6; }
+
+    /* Stream Tag Badges */
+    .tag-badge {
+      font-size: 0.64rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .tag-SC { background: #dbeafe; color: #1e40af; }
+    .tag-HC { background: #dcfce7; color: #166534; }
+    .tag-SW { background: #fef3c7; color: #92400e; }
+    .tag-BF { background: #f3e8ff; color: #6b21a8; }
+    .tag-入境 { background: #ffe4e6; color: #9f1239; }
+    .tag-default { background: #e2e8f0; color: #475569; }
+
+    .attendance-badge {
+      font-size: 0.64rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 1px 4px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .attendance-present { color: var(--success); }
+    .attendance-absent { color: var(--danger); background: #fef2f2; }
+    .attendance-late { color: var(--warning); background: #fffbeb; }
+    .attendance-leave { color: var(--purple); background: #f5f3ff; }
+
+    /* Side Panel */
+    .side-panel {
+      width: 290px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .side-panel.collapsed { display: none; }
+
+    .side-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--card-shadow);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .side-card h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .unassigned-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 4px;
+      min-height: 65px;
+      border: 2px dashed var(--gray-200);
+      border-radius: 7px;
+    }
+
+    .unassigned-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 5px 9px;
+      cursor: grab;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .unassigned-item:hover { background: white; border-color: var(--primary); }
+
+    .snapshot-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .snapshot-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 8px;
+      background: var(--gray-50);
+      border-radius: 6px;
+      font-size: 0.76rem;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .modal-overlay.show { opacity: 1; visibility: visible; }
+
+    .modal-dialog {
+      background: white;
+      border-radius: 14px;
+      width: 90%;
+      max-width: 580px;
+      padding: 22px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      color: var(--gray-600);
+      cursor: pointer;
+    }
+
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--gray-700); margin-bottom: 5px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--gray-300);
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .form-row { display: flex; gap: 10px; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    /* Template Cards inside Modal */
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .template-card {
+      border: 1.5px solid var(--gray-300);
+      border-radius: 8px;
+      padding: 8px 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      background: #fff;
+    }
+    .template-card:hover { border-color: var(--primary); background: var(--gray-50); }
+    .template-card.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 700; }
+    .template-card .code { font-size: 0.9rem; font-weight: 800; font-family: monospace; letter-spacing: 0.05em; display: block; }
+    .template-card .desc { font-size: 0.68rem; color: #64748b; margin-top: 2px; }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 200;
+    }
+
+    .toast {
+      background: var(--gray-800);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideUp 0.2s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Print View */
+    @media print {
+      header, .tabs-wrapper, .sub-bar, .side-panel, .btn, .group-tools {
+        display: none !important;
+      }
+      body { background: white; padding: 0; }
+      .app-main { padding: 0; margin: 0; max-width: 100%; }
+      .view-panel { border: none; box-shadow: none; padding: 0; }
+      .group-card { border: 1.5px solid #000 !important; break-inside: avoid; }
+      .desk-cell { border: 1.5px solid #000 !important; }
+      .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
+    }
+
+    .print-header { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Print Header -->
+  <div class="print-header">
+    <h1 id="printTitle" style="font-size: 20px; font-weight: bold;">班級座位表</h1>
+    <p id="printSubtitle" style="font-size: 13px; color: #444; margin-top: 4px;"></p>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="app-logo">🪑</div>
+      <div class="app-title">
+        <h1>Classroom Seating Master</h1>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-secondary btn-sm" onclick="toggleSidebar()" id="sidebarToggleBtn" title="展開或收合側邊欄">📋 Sidebar</button>
+      <button class="btn btn-secondary btn-sm" onclick="printSeatingChart()" title="列印或另存為 PDF">🖨️ Print / PDF</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportData()" title="備份資料為 JSON 檔案">📥 Export Backup</button>
+      <button class="btn btn-secondary btn-sm" onclick="triggerImport()" title="匯入備份資料">📤 Import</button>
+      <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="importData(event)">
+      <button class="btn btn-primary btn-sm" onclick="openNewClassModal()">➕ Add Class</button>
+    </div>
+  </header>
+
+  <!-- Tabs Navigation ("一個tag 一班") -->
+  <div class="tabs-wrapper">
+    <div style="display: flex; align-items: center; flex: 1; overflow-x: auto;">
+      <div class="filter-pills">
+        <div class="filter-pill active" id="pillActive" onclick="setFilter('active')">Active (<span id="activeCount">3</span>)</div>
+        <div class="filter-pill" id="pillArchived" onclick="setFilter('archived')">Archived (<span id="archivedCount">0</span>)</div>
+      </div>
+
+      <!-- Class Tabs -->
+      <div class="tabs-container" id="classTabs"></div>
+    </div>
+
+    <div class="tab-actions">
+      <button class="btn btn-secondary btn-sm" onclick="openLayoutStudioModal()" id="layoutButton" title="切換或自訂課室佈局">⚙️ Layout (<span id="currentTemplateCode">POD-3S</span>)</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetToBaseSeating()" title="強制重設此班至最新預設名單">🔄 Reset</button>
+      <button class="btn btn-warning btn-sm" id="archiveToggleBtn" onclick="toggleArchiveCurrentClass()" title="封存此班級">📦 Archive</button>
+    </div>
+  </div>
+
+  <!-- Sub-bar: CLEAN, MINIMAL, NO CLUNKY LABELS AT ALL -->
+  <div class="sub-bar">
+    <div class="stats-row">
+      <span class="stat-pill" id="studentTotalPill">32 Students</span>
+      <span class="stat-pill success" id="presentPill">32 Present</span>
+      <span class="stat-pill danger" id="absentPill" style="display: none;">0 Absent</span>
+      <span class="stat-pill warning" id="latePill" style="display: none;">0 Late</span>
+    </div>
+
+    <div class="control-tools">
+      <!-- Interaction Mode -->
+      <div class="mode-group">
+        <button class="mode-btn active" id="modeDrag" onclick="setInteractionMode('drag')">🖐️ Drag</button>
+        <button class="mode-btn" id="modeClick" onclick="setInteractionMode('click')">👆 Swap</button>
+        <button class="mode-btn" id="modeAttendance" onclick="setInteractionMode('attendance')">⏱️ Roll-Call</button>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="mode-group">
+        <button class="mode-btn" onclick="adjustZoom(-0.08)" title="Zoom Out">-</button>
+        <span style="font-size: 0.74rem; font-weight: 600; padding: 2px 5px; display: flex; align-items: center;" id="zoomLevelText">100%</span>
+        <button class="mode-btn" onclick="adjustZoom(0.08)" title="Zoom In">+</button>
+        <button class="mode-btn" onclick="resetZoom()" title="Reset Zoom">100%</button>
+      </div>
+
+      <!-- Search Input -->
+      <input type="text" id="searchInput" class="form-input" style="padding: 3px 8px; font-size: 0.76rem; width: 110px; border-radius: 6px;" placeholder="🔍 Search..." oninput="handleSearch(this.value)">
+
+      <!-- Quick Save Session Snapshot -->
+      <button class="btn btn-success btn-sm" onclick="saveLessonSnapshot()" title="儲存當天這堂課的即時座位與出席狀況">💾 Save Session</button>
+    </div>
+  </div>
+
+  <!-- Selection Banner (Click-to-Swap) -->
+  <div id="selectionBanner" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 6px 20px; font-size: 0.82rem; color: #1e40af; align-items: center; justify-content: space-between;">
+    <span id="selectionBannerText">💡 Selected student. Click target seat or another student to swap.</span>
+    <button class="btn btn-secondary btn-sm" onclick="clearSelection()" style="padding: 2px 6px; font-size: 0.72rem;">Cancel</button>
+  </div>
+
+  <!-- Main Workspace Area -->
+  <main class="app-main">
+    <!-- View Panel -->
+    <div class="view-panel" id="viewPanel">
+      <div class="scalable-content" id="scalableContent">
+        <div class="back-wall-indicator">
+          <span>⬆️ BACK OF CLASSROOM ⬆️</span>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div id="mainLayoutArea"></div>
+
+        <!-- Bottom Full Podium Bar (For Grid / Row modes) -->
+        <div class="bottom-podium-full" id="bottomPodiumFull" style="display: none;">
+          <span>👨‍🏫 TEACHER'S DESK (FRONT)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Panel -->
+    <aside class="side-panel" id="sidePanel">
+      <div class="side-card">
+        <h3>
+          <span>📋 Unassigned (<span id="unassignedCount">0</span>)</span>
+          <button class="btn btn-secondary btn-sm" onclick="openAddStudentModal()" style="padding: 2px 6px; font-size: 0.7rem;">+ Add</button>
+        </h3>
+        <p style="font-size: 0.74rem; color: var(--gray-600);">Drag students here to park, or drag back to seats.</p>
+        <div class="unassigned-list" id="unassignedList" ondragover="handleDragOver(event)" ondrop="handleDropToUnassigned(event)"></div>
+      </div>
+
+      <div class="side-card">
+        <h3>⚡ Quick Tools</h3>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <button class="btn btn-secondary btn-sm" onclick="markAllPresent()" style="width: 100%;">✅ Mark All Present</button>
+          <button class="btn btn-secondary btn-sm" onclick="saveCurrentAsMaster()" style="width: 100%;">⭐ Set as Master Default</button>
+          <button class="btn btn-secondary btn-sm" onclick="checkGitHubSync()" style="width: 100%;" title="若有放在 GitHub Pages，點擊從同目錄載入 classes_backup.json">☁️ Sync from Server</button>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h3>
+          <span>🕒 Session History</span>
+        </h3>
+        <div class="snapshot-list" id="snapshotList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Modal: Layout Studio (佈局自訂神器) -->
+  <div class="modal-overlay" id="layoutStudioModal">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h2>⚙️ Classroom Layout Studio</h2>
+        <button class="modal-close" onclick="closeModal('layoutStudioModal')">&times;</button>
+      </div>
+
+      <!-- Template Cards -->
+      <div class="form-group">
+        <label class="form-label">Select Layout Architecture</label>
+        <div class="template-grid">
+          <div class="template-card" id="tmplCard_POD-3S" onclick="selectStudioTemplate('POD-3S')">
+            <span class="code">POD-3S</span>
+            <div class="desc">3-Session Pods (左中右小組)</div>
+          </div>
+          <div class="template-card" id="tmplCard_POD-2S" onclick="selectStudioTemplate('POD-2S')">
+            <span class="code">POD-2S</span>
+            <div class="desc">2-Session Pods (雙區小組)</div>
+          </div>
+          <div class="template-card" id="tmplCard_PAIR-ROW" onclick="selectStudioTemplate('PAIR-ROW')">
+            <span class="code">PAIR-ROW</span>
+            <div class="desc">Paired Aisles (2-2-2 孖行)</div>
+          </div>
+          <div class="template-card" id="tmplCard_SEC-ROW" onclick="selectStudioTemplate('SEC-ROW')">
+            <span class="code">SEC-ROW</span>
+            <div class="desc">Sectioned Rows (分區橫行)</div>
+          </div>
+          <div class="template-card" id="tmplCard_LINE-ROW" onclick="selectStudioTemplate('LINE-ROW')">
+            <span class="code">LINE-ROW</span>
+            <div class="desc">Single Rows (單人單行)</div>
+          </div>
+          <div class="template-card" id="tmplCard_CUSTOM" onclick="selectStudioTemplate('CUSTOM')">
+            <span class="code">CUSTOM</span>
+            <div class="desc">Manual Setup (自由自訂)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Settings Form -->
+      <div id="studioConfigArea" style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+        <!-- Injected via JS depending on template -->
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('layoutStudioModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="applyStudioLayout()">Apply Layout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add New Class -->
+  <div class="modal-overlay" id="newClassModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>➕ Add New Class</h2>
+        <button class="modal-close" onclick="closeModal('newClassModal')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Class Name *</label>
+        <input type="text" class="form-input" id="newClassName" placeholder="e.g. APL 7th, DAE 6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Layout Template *</label>
+        <select class="form-select" id="newClassTemplate">
+          <option value="POD-3S">POD-3S : 3-Session Pod Clusters (APL style: Left 3, Mid 3, Right 2)</option>
+          <option value="POD-2S">POD-2S : 2-Session Pod Clusters (Left & Right 2-3 groups)</option>
+          <option value="PAIR-ROW">PAIR-ROW : Paired Aisles 2-2-2 (DAE style: 5 Rows x 8 Cols)</option>
+          <option value="SEC-ROW">SEC-ROW : Sectioned Rows (3 Sections, 4 Seats Wide, 4 Rows)</option>
+          <option value="LINE-ROW">LINE-ROW : Single Desk Rows (1-1-1)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Student Roster (One name per line)</label>
+        <textarea class="form-textarea" id="newClassStudents" rows="4" placeholder="Name 1 SC&#10;Name 2 HC&#10;Name 3 SW"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('newClassModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewClass()">Create Class</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Single Student -->
+  <div class="modal-overlay" id="addStudentModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>➕ Add Student</h2>
+        <button class="modal-close" onclick="closeModal('addStudentModal')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Student Name *</label>
+        <input type="text" class="form-input" id="newStudentName" placeholder="e.g. David Chan">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tag / Stream (Optional)</label>
+        <input type="text" class="form-input" id="newStudentTag" placeholder="e.g. SC, HC, SW, BF">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddStudent()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // Initial Data V6
+    const DEFAULT_CLASSES = [
+  {
+    "id": "class_apl6",
+    "name": "APL 6th",
+    "room": "RM 302",
+    "status": "active",
+    "template": "POD-3S",
+    "layoutConfig": {
+      "type": "pods",
+      "sections": 3,
+      "sectionGroups": [
+        3,
+        3,
+        2
+      ],
+      "teacherDesk": "BR"
+    },
+    "groups": [
+      {
+        "id": "g_l1",
+        "name": "G1",
+        "section": "Left",
+        "pos": "Back",
+        "students": [
+          {
+            "id": "s_apl_13",
+            "name": "韓沁珊",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_14",
+            "name": "黃彦妮",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_15",
+            "name": "黃琪琪",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_16",
+            "name": "章凱姿",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_l2",
+        "name": "G2",
+        "section": "Left",
+        "pos": "Mid",
+        "students": [
+          {
+            "id": "s_apl_17",
+            "name": "張淳煒",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_18",
+            "name": "丁師鴻",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_19",
+            "name": "陳柏宏",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_20",
+            "name": "蔡明錫",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_21",
+            "name": "王博軒",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_l3",
+        "name": "G3",
+        "section": "Left",
+        "pos": "Front",
+        "students": [
+          {
+            "id": "s_apl_22",
+            "name": "林寅森",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_23",
+            "name": "施凱耀",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_24",
+            "name": "李柏儀",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_25",
+            "name": "嚴芷昕",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_26",
+            "name": "關詩曼",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_27",
+            "name": "施芷晴",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_m1",
+        "name": "G4",
+        "section": "Center",
+        "pos": "Back",
+        "students": [
+          {
+            "id": "s_apl_1",
+            "name": "林嘉棟",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_2",
+            "name": "林潤澤",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_3",
+            "name": "曾杰仁",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_4",
+            "name": "鄭家豪",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_m2",
+        "name": "G5",
+        "section": "Center",
+        "pos": "Mid",
+        "students": [
+          {
+            "id": "s_apl_5",
+            "name": "黃文熙",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_6",
+            "name": "王澤堃",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_7",
+            "name": "鄭貴誠",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_m3",
+        "name": "G6",
+        "section": "Center",
+        "pos": "Front",
+        "students": [
+          {
+            "id": "s_apl_8",
+            "name": "李壟鑫",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_9",
+            "name": "王松煜",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_10",
+            "name": "馬咏琳?",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_11",
+            "name": "吴嘉怡",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_12",
+            "name": "鄭淑賢",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_r1",
+        "name": "G7",
+        "section": "Right",
+        "pos": "Back",
+        "students": [
+          {
+            "id": "s_apl_31",
+            "name": "鄺樂兒",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_32",
+            "name": "蘇妤非",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      },
+      {
+        "id": "g_r2",
+        "name": "G8",
+        "section": "Right",
+        "pos": "Front",
+        "students": [
+          {
+            "id": "s_apl_28",
+            "name": "卓志高",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_29",
+            "name": "留安琪",
+            "tag": "",
+            "status": "present"
+          },
+          {
+            "id": "s_apl_30",
+            "name": "王梓儀",
+            "tag": "",
+            "status": "present"
+          }
+        ]
+      }
+    ],
+    "unassigned": [],
+    "snapshots": []
+  },
+  {
+    "id": "class_dae4",
+    "name": "DAE 4",
+    "room": "RM 105",
+    "status": "active",
+    "template": "PAIR-ROW",
+    "layoutConfig": {
+      "type": "grid",
+      "rows": 5,
+      "cols": 8,
+      "pattern": "paired_aisle",
+      "aisles": [
+        "0-2",
+        "1-2",
+        "2-2",
+        "3-2",
+        "4-2",
+        "0-5",
+        "1-5",
+        "2-5",
+        "3-5",
+        "4-5"
+      ],
+      "teacherDesk": "BC"
+    },
+    "seats": {
+      "0-0": {
+        "id": "s_dae4_1",
+        "name": "李健一 SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "0-1": {
+        "id": "s_dae4_2",
+        "name": "張燿錩 Darren SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "0-4": {
+        "id": "s_dae4_3",
+        "name": "陳文熙 Man Hei SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "0-6": {
+        "id": "s_dae4_4",
+        "name": "蔡宇傲 Daniel HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "0-7": {
+        "id": "s_dae4_5",
+        "name": "陸建德 Ken SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "1-0": {
+        "id": "s_dae4_6",
+        "name": "杜卓瑩",
+        "tag": "",
+        "status": "present"
+      },
+      "1-1": {
+        "id": "s_dae4_7",
+        "name": "張欣妮 BF",
+        "tag": "BF",
+        "status": "present"
+      },
+      "1-3": {
+        "id": "s_dae4_8",
+        "name": "李曉星 Sing SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "1-4": {
+        "id": "s_dae4_9",
+        "name": "鍾彩瑩 Alice HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "1-6": {
+        "id": "s_dae4_10",
+        "name": "周子愛 SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "1-7": {
+        "id": "s_dae4_11",
+        "name": "謝楚瑩 Kristy HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "2-0": {
+        "id": "s_dae4_12",
+        "name": "麥凱傑 Hoi Kit BF",
+        "tag": "BF",
+        "status": "present"
+      },
+      "2-3": {
+        "id": "s_dae4_13",
+        "name": "廖小柔 Christy HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "2-4": {
+        "id": "s_dae4_14",
+        "name": "何雯橦 Jovie HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "2-6": {
+        "id": "s_dae4_15",
+        "name": "廖鎧程 Jovy SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "2-7": {
+        "id": "s_dae4_16",
+        "name": "萬家豪 HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "3-0": {
+        "id": "s_dae4_17",
+        "name": "吳澄 Carmen BF",
+        "tag": "BF",
+        "status": "present"
+      },
+      "3-1": {
+        "id": "s_dae4_18",
+        "name": "冼麗敏 Qube SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "3-4": {
+        "id": "s_dae4_19",
+        "name": "陳芷琪 Kikko HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "3-6": {
+        "id": "s_dae4_20",
+        "name": "黎濠彥 Eric",
+        "tag": "",
+        "status": "present"
+      },
+      "4-1": {
+        "id": "s_dae4_21",
+        "name": "曾家俊 Marcus SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "4-4": {
+        "id": "s_dae4_22",
+        "name": "林俊文 俊文",
+        "tag": "",
+        "status": "present"
+      },
+      "4-6": {
+        "id": "s_dae4_23",
+        "name": "吳煒軒 Hin SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "4-7": {
+        "id": "s_dae4_24",
+        "name": "莊誠灝 Nelson HC",
+        "tag": "HC",
+        "status": "present"
+      }
+    },
+    "unassigned": [],
+    "snapshots": []
+  },
+  {
+    "id": "class_dae5",
+    "name": "DAE 5",
+    "room": "RM 106",
+    "status": "active",
+    "template": "PAIR-ROW",
+    "layoutConfig": {
+      "type": "grid",
+      "rows": 5,
+      "cols": 8,
+      "pattern": "paired_aisle",
+      "aisles": [
+        "0-2",
+        "1-2",
+        "2-2",
+        "3-2",
+        "4-2",
+        "0-5",
+        "1-5",
+        "2-5",
+        "3-5",
+        "4-5"
+      ],
+      "teacherDesk": "BC"
+    },
+    "seats": {
+      "0-1": {
+        "id": "s_dae5_1",
+        "name": "黃慧恩 Vivian SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "0-4": {
+        "id": "s_dae5_2",
+        "name": "余佳鑫 鑫 SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "0-6": {
+        "id": "s_dae5_3",
+        "name": "繆泳琰 Miu SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "0-7": {
+        "id": "s_dae5_4",
+        "name": "張嘉浚 Tsun SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "1-0": {
+        "id": "s_dae5_5",
+        "name": "吳焯傑 Kit SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "1-1": {
+        "id": "s_dae5_6",
+        "name": "方嘉燿 Billy HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "1-3": {
+        "id": "s_dae5_7",
+        "name": "周正傑 Bosco SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "1-4": {
+        "id": "s_dae5_8",
+        "name": "周靖欽 BF",
+        "tag": "BF",
+        "status": "present"
+      },
+      "1-6": {
+        "id": "s_dae5_9",
+        "name": "王曉婷 SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "1-7": {
+        "id": "s_dae5_10",
+        "name": "黃采兒 采兒 HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "2-0": {
+        "id": "s_dae5_11",
+        "name": "駱紫欣 Ashley HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "2-1": {
+        "id": "s_dae5_12",
+        "name": "周證恩 Matthew SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "2-3": {
+        "id": "s_dae5_13",
+        "name": "黃家輝 Fai SC",
+        "tag": "SC",
+        "status": "present"
+      },
+      "2-4": {
+        "id": "s_dae5_14",
+        "name": "胡芷佑 Janelle SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "2-6": {
+        "id": "s_dae5_15",
+        "name": "黃心瑜 心瑜 SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "2-7": {
+        "id": "s_dae5_16",
+        "name": "歐陽方盈 Michelle BF",
+        "tag": "BF",
+        "status": "present"
+      },
+      "3-0": {
+        "id": "s_dae5_17",
+        "name": "連家恩 Anila SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "3-1": {
+        "id": "s_dae5_18",
+        "name": "盧芷君 Mary HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "3-3": {
+        "id": "s_dae5_19",
+        "name": "李孟康 Jordy HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "3-4": {
+        "id": "s_dae5_20",
+        "name": "常校煒",
+        "tag": "",
+        "status": "present"
+      },
+      "3-6": {
+        "id": "s_dae5_21",
+        "name": "范曉澄 Cindy SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "3-7": {
+        "id": "s_dae5_22",
+        "name": "蔡志偉 Jerry 入境",
+        "tag": "入境",
+        "status": "present"
+      },
+      "4-1": {
+        "id": "s_dae5_23",
+        "name": "鍾子龍 SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "4-3": {
+        "id": "s_dae5_24",
+        "name": "徐穎瑤 Jeannie HC",
+        "tag": "HC",
+        "status": "present"
+      },
+      "4-4": {
+        "id": "s_dae5_25",
+        "name": "周倩兒 Ruby SW",
+        "tag": "SW",
+        "status": "present"
+      },
+      "4-6": {
+        "id": "s_dae5_26",
+        "name": "張溢匡 Garson 入境",
+        "tag": "入境",
+        "status": "present"
+      },
+      "4-7": {
+        "id": "s_dae5_27",
+        "name": "唐彥博 博 SC",
+        "tag": "SC",
+        "status": "present"
+      }
+    },
+    "unassigned": [],
+    "snapshots": []
+  }
+];
+
+    // State
+    let classes = [];
+    let currentClassId = "class_apl6";
+    let activeFilter = "active";
+    let interactionMode = "drag";
+    let selectedItem = null;
+    let draggedItem = null;
+    let searchQuery = "";
+    let currentZoom = 1.0;
+    let isSidebarCollapsed = false;
+    let selectedStudioTemplate = "POD-3S";
+
+    const STORAGE_KEY = "CLASSROOM_MASTER_DATA_V6";
+
+    // Initialize App
+    function init() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          classes = JSON.parse(saved);
+        } catch (e) {
+          classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+        }
+      } else {
+        classes = JSON.parse(JSON.stringify(DEFAULT_CLASSES));
+        saveState();
+      }
+
+      if (!classes.find(c => c.id === currentClassId)) {
+        currentClassId = classes[0]?.id || "";
+      }
+
+      renderTabs();
+      renderCurrentClass();
+      setupTouchDragSupport();
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(classes));
+      updateCounts();
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerHTML = `<span>🔔</span> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 250);
+      }, 2300);
+    }
+
+    function getCurrentClass() {
+      return classes.find(c => c.id === currentClassId);
+    }
+
+    function setFilter(filter) {
+      activeFilter = filter;
+      document.getElementById("pillActive").classList.toggle("active", filter === "active");
+      document.getElementById("pillArchived").classList.toggle("active", filter === "archived");
+      
+      const filtered = classes.filter(c => c.status === filter);
+      if (filtered.length > 0 && !filtered.find(c => c.id === currentClassId)) {
+        currentClassId = filtered[0].id;
+      }
+      renderTabs();
+      renderCurrentClass();
+    }
+
+    function updateCounts() {
+      const active = classes.filter(c => c.status === "active").length;
+      const archived = classes.filter(c => c.status === "archived").length;
+      document.getElementById("activeCount").textContent = active;
+      document.getElementById("archivedCount").textContent = archived;
+    }
+
+    function renderTabs() {
+      const container = document.getElementById("classTabs");
+      container.innerHTML = "";
+      updateCounts();
+
+      const filtered = classes.filter(c => c.status === activeFilter);
+      if (filtered.length === 0) {
+        container.innerHTML = `<span style="font-size: 0.8rem; color: #94a3b8; padding: 8px;">No classes</span>`;
+        return;
+      }
+
+      filtered.forEach(cls => {
+        let count = 0;
+        if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+          (cls.groups || []).forEach(g => count += (g.students || []).length);
+        } else {
+          count = Object.keys(cls.seats || {}).length;
+        }
+
+        const tab = document.createElement("div");
+        tab.className = `tab-item ${cls.id === currentClassId ? 'active' : ''}`;
+        tab.onclick = () => switchClass(cls.id);
+        const icon = (cls.layoutConfig && cls.layoutConfig.type === "pods") ? "👥" : "🏫";
+        tab.innerHTML = `
+          <span>${icon} ${cls.name}</span>
+          <span class="tab-badge">${count}</span>
+        `;
+        container.appendChild(tab);
+      });
+    }
+
+    function switchClass(id) {
+      currentClassId = id;
+      clearSelection();
+      renderTabs();
+      renderCurrentClass();
+    }
+
+    function toggleSidebar() {
+      isSidebarCollapsed = !isSidebarCollapsed;
+      const panel = document.getElementById("sidePanel");
+      const btn = document.getElementById("sidebarToggleBtn");
+      if (isSidebarCollapsed) {
+        panel.classList.add("collapsed");
+        btn.textContent = "📋 Show Sidebar";
+      } else {
+        panel.classList.remove("collapsed");
+        btn.textContent = "📋 Sidebar";
+      }
+    }
+
+    function adjustZoom(delta) {
+      currentZoom = Math.max(0.65, Math.min(1.3, currentZoom + delta));
+      applyZoom();
+    }
+
+    function resetZoom() {
+      currentZoom = 1.0;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      document.getElementById("scalableContent").style.transform = `scale(${currentZoom})`;
+      document.getElementById("zoomLevelText").textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+
+    // Render Current Class
+    function renderCurrentClass() {
+      const cls = getCurrentClass();
+      if (!cls) {
+        document.getElementById("mainLayoutArea").innerHTML = "<p style='padding: 40px; text-align: center; color: #94a3b8;'>Select or add a class</p>";
+        return;
+      }
+
+      // Update template code in tab actions
+      document.getElementById("currentTemplateCode").textContent = cls.template || "LAYOUT";
+
+      // Count stats
+      let totalStudents = 0;
+      let present = 0, absent = 0, late = 0, leave = 0;
+
+      if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+        (cls.groups || []).forEach(g => {
+          (g.students || []).forEach(s => {
+            totalStudents++;
+            if (s.status === "absent") absent++;
+            else if (s.status === "late") late++;
+            else if (s.status === "leave") leave++;
+            else present++;
+          });
+        });
+        document.getElementById("bottomPodiumFull").style.display = "none";
+      } else {
+        Object.values(cls.seats || {}).forEach(s => {
+          totalStudents++;
+          if (s.status === "absent") absent++;
+          else if (s.status === "late") late++;
+          else if (s.status === "leave") leave++;
+          else present++;
+        });
+        document.getElementById("bottomPodiumFull").style.display = "flex";
+      }
+
+      // Clean Sub-bar Stats
+      document.getElementById("studentTotalPill").textContent = `${totalStudents} Students`;
+      document.getElementById("presentPill").textContent = `${present} Present`;
+
+      const absentPill = document.getElementById("absentPill");
+      if (absent > 0) {
+        absentPill.style.display = "inline-flex";
+        absentPill.textContent = `${absent} Absent`;
+      } else {
+        absentPill.style.display = "none";
+      }
+
+      const latePill = document.getElementById("latePill");
+      if (late > 0) {
+        latePill.style.display = "inline-flex";
+        latePill.textContent = `${late} Late`;
+      } else {
+        latePill.style.display = "none";
+      }
+
+      const archiveBtn = document.getElementById("archiveToggleBtn");
+      if (cls.status === "archived") {
+        archiveBtn.textContent = "📤 Restore";
+        archiveBtn.className = "btn btn-primary btn-sm";
+      } else {
+        archiveBtn.textContent = "📦 Archive";
+        archiveBtn.className = "btn btn-warning btn-sm";
+      }
+
+      const mainArea = document.getElementById("mainLayoutArea");
+      if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+        renderPodsLayout(cls, mainArea);
+      } else {
+        renderFluidGridLayout(cls, mainArea);
+      }
+
+      renderUnassignedList(cls);
+      renderSnapshots(cls);
+      if (searchQuery) handleSearch(searchQuery);
+    }
+
+    // ============================================================
+    // 1. PODS LAYOUT RENDERER (POD-3S & POD-2S)
+    // ============================================================
+    function renderPodsLayout(cls, container) {
+      const groups = cls.groups || [];
+      const sections = cls.layoutConfig.sections || 3;
+      const teacherDesk = cls.layoutConfig.teacherDesk || "BR";
+
+      let sectionCols = [];
+      if (sections === 3) {
+        sectionCols = [
+          { key: "Left", title: "Left", groups: groups.filter(g => g.section === "Left") },
+          { key: "Center", title: "Center", groups: groups.filter(g => g.section === "Center") },
+          { key: "Right", title: "Right", groups: groups.filter(g => g.section === "Right") }
+        ];
+      } else {
+        sectionCols = [
+          { key: "Left", title: "Left", groups: groups.filter(g => g.section === "Left") },
+          { key: "Right", title: "Right", groups: groups.filter(g => g.section === "Right") }
+        ];
+      }
+
+      let html = `<div class="pods-container" style="grid-template-columns: repeat(${sections}, 1fr);">`;
+
+      sectionCols.forEach((col, idx) => {
+        const isRightTeacher = (teacherDesk === "BR" && idx === sections - 1);
+        const isLeftTeacher = (teacherDesk === "BL" && idx === 0);
+        const isCenterTeacher = (teacherDesk === "BC" && ((sections === 3 && idx === 1) || (sections === 2 && idx === 1)));
+
+        html += `
+          <div class="pods-col ${isRightTeacher || isLeftTeacher || isCenterTeacher ? 'has-teacher' : ''}">
+            <div class="pods-col-header">
+              <span>${col.title} (${col.groups.length} Groups)</span>
+              <span style="font-size: 0.7rem; color: #64748b;">${col.groups.reduce((a,g)=>a+(g.students||[]).length,0)} Students</span>
+            </div>
+            <div id="colPods_${idx}" style="display: flex; flex-direction: column; gap: 12px; flex: 1;"></div>
+            ${isRightTeacher || isLeftTeacher || isCenterTeacher ? `
+              <div class="pods-teacher-desk">
+                <div class="desk-title">👨‍🏫 TEACHER'S DESK</div>
+                <div class="desk-subtitle">Front of Classroom</div>
+              </div>` : ''}
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+
+      sectionCols.forEach((col, idx) => {
+        const colDiv = document.getElementById(`colPods_${idx}`);
+        col.groups.forEach(g => colDiv.appendChild(createGroupCardElement(g, cls)));
+      });
+    }
+
+    function createGroupCardElement(group, cls) {
+      const card = document.createElement("div");
+      card.className = `group-card`;
+      card.dataset.groupId = group.id;
+
+      card.ondragover = (e) => handleGroupDragOver(e);
+      card.ondragleave = (e) => handleGroupDragLeave(e);
+      card.ondrop = (e) => handleGroupDrop(e, group.id);
+
+      const header = document.createElement("div");
+      header.className = "group-card-header";
+      header.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="group-title" onclick="renameGroup('${group.id}')" title="Click to rename">${group.name}</span>
+          <span class="group-count-pill">${(group.students || []).length}</span>
+        </div>
+        <div class="group-tools">
+          <button class="group-tool-btn" onclick="addStudentToGroup('${group.id}')" title="Add Student">➕</button>
+          <button class="group-tool-btn" onclick="markGroupPresent('${group.id}')" title="Mark All Present">✅</button>
+        </div>
+      `;
+      card.appendChild(header);
+
+      const list = document.createElement("div");
+      list.className = "group-students-flex";
+
+      const students = group.students || [];
+      if (students.length === 0) {
+        list.innerHTML = `<div class="group-empty-hint" onclick="addStudentToGroup('${group.id}')">+ Drop or add student</div>`;
+      } else {
+        students.forEach((s, sIdx) => {
+          const isSelected = selectedItem && selectedItem.student && selectedItem.student.id === s.id;
+          const sCard = document.createElement("div");
+          sCard.className = `student-card ${isSelected ? 'selected' : ''} status-${s.status || 'present'}`;
+          sCard.draggable = (interactionMode === "drag");
+          sCard.dataset.studentId = s.id;
+
+          let tagHtml = "";
+          if (s.tag) {
+            const tagClass = ['SC', 'HC', 'SW', 'BF', '入境'].includes(s.tag) ? `tag-${s.tag}` : 'tag-default';
+            tagHtml = `<span class="tag-badge ${tagClass}">${s.tag}</span>`;
+          }
+
+          let attText = "Present";
+          let attClass = "attendance-present";
+          if (s.status === "absent") { attText = "Absent"; attClass = "attendance-absent"; }
+          else if (s.status === "late") { attText = "Late"; attClass = "attendance-late"; }
+          else if (s.status === "leave") { attText = "Leave"; attClass = "attendance-leave"; }
+
+          sCard.innerHTML = `
+            <span class="desk-status-dot ${s.status || 'present'}"></span>
+            <span class="student-name-text" title="${s.name}">${s.name}</span>
+            ${tagHtml}
+            <span class="attendance-badge ${attClass}" onclick="event.stopPropagation(); cycleStudentAttendanceInGroup('${group.id}', ${sIdx})">${attText}</span>
+          `;
+
+          sCard.ondragstart = (e) => handleStudentDragStart(e, s, group.id, 'group');
+          sCard.onclick = () => handleStudentClickInGroup(s, group.id);
+
+          list.appendChild(sCard);
+        });
+      }
+
+      card.appendChild(list);
+      return card;
+    }
+
+    // ============================================================
+    // 2. GRID / ROW LAYOUT RENDERER (PAIR-ROW, SEC-ROW, LINE-ROW)
+    // ============================================================
+    function renderFluidGridLayout(cls, container) {
+      const wrap = document.createElement("div");
+      wrap.className = "grid-wrap";
+
+      const rows = cls.layoutConfig.rows || 5;
+      const cols = cls.layoutConfig.cols || 8;
+      const aisles = cls.layoutConfig.aisles || [];
+
+      // Column Header row
+      const colHeaders = document.createElement("div");
+      colHeaders.className = "grid-col-headers";
+      colHeaders.style.gridTemplateColumns = `44px repeat(${cols}, minmax(0, 1fr))`;
+      colHeaders.innerHTML = `<div></div>`;
+
+      for (let c = 0; c < cols; c++) {
+        const isAisleCol = (aisles.filter(a => a.endsWith(`-${c}`)).length >= rows / 2);
+        const aisleClass = isAisleCol ? "aisle" : "";
+        const label = isAisleCol ? `Aisle` : `C${c+1}`;
+        colHeaders.innerHTML += `<div class="grid-col-header ${aisleClass}">${label}</div>`;
+      }
+      wrap.appendChild(colHeaders);
+
+      // Rows
+      for (let r = 0; r < rows; r++) {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "grid-row";
+        rowDiv.style.gridTemplateColumns = `44px repeat(${cols}, minmax(0, 1fr))`;
+
+        const rowLabel = document.createElement("div");
+        rowLabel.className = "grid-row-label";
+        const isFrontRow = (r === rows - 1);
+        rowLabel.innerHTML = isFrontRow ? `R${r+1}<br><span style="color:#d97706;font-size:0.62rem;">Front</span>` : `R${r+1}`;
+        rowDiv.appendChild(rowLabel);
+
+        for (let c = 0; c < cols; c++) {
+          const coord = `${r}-${c}`;
+          const isAisle = aisles.includes(coord);
+          const student = (cls.seats || {})[coord];
+
+          const cell = document.createElement("div");
+          cell.dataset.coord = coord;
+
+          if (isAisle) {
+            cell.className = "desk-cell aisle";
+            cell.innerHTML = `<span>Aisle</span>`;
+            cell.onclick = () => handleGridCellClick(coord, "aisle");
+            cell.ondragover = (e) => handleDragOver(e);
+            cell.ondrop = (e) => handleGridDrop(e, coord);
+          } else if (student) {
+            const isSelected = selectedItem && selectedItem.coord === coord;
+            cell.className = `desk-cell ${isSelected ? 'selected' : ''} status-${student.status || 'present'}`;
+            cell.draggable = (interactionMode === 'drag');
+
+            let tagHtml = "";
+            if (student.tag) {
+              const tagClass = ['SC', 'HC', 'SW', 'BF', '入境'].includes(student.tag) ? `tag-${student.tag}` : 'tag-default';
+              tagHtml = `<span class="tag-badge ${tagClass}">${student.tag}</span>`;
+            }
+
+            let attText = "Present";
+            let attClass = "attendance-present";
+            if (student.status === "absent") { attText = "Absent"; attClass = "attendance-absent"; }
+            else if (student.status === "late") { attText = "Late"; attClass = "attendance-late"; }
+            else if (student.status === "leave") { attText = "Leave"; attClass = "attendance-leave"; }
+
+            cell.innerHTML = `
+              <div class="desk-header">
+                <span class="seat-coord">R${r+1}-C${c+1}</span>
+                <span class="desk-status-dot ${student.status || 'present'}"></span>
+              </div>
+              <div class="student-name-text" style="text-align: center; margin: 2px 0; overflow: hidden; text-overflow: ellipsis;" title="${student.name}">${student.name}</div>
+              <div class="desk-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                ${tagHtml || '<span></span>'}
+                <span class="attendance-badge ${attClass}" onclick="event.stopPropagation(); cycleGridAttendance('${coord}')">${attText}</span>
+              </div>
+            `;
+
+            cell.ondragstart = (e) => handleGridDragStart(e, coord);
+            cell.ondragover = (e) => handleDragOver(e);
+            cell.ondrop = (e) => handleGridDrop(e, coord);
+            cell.onclick = () => handleGridCellClick(coord, "occupied");
+          } else {
+            cell.className = "desk-cell empty";
+            cell.innerHTML = `
+              <div style="text-align: center;">
+                <div style="font-size: 0.62rem; color: #94a3b8; margin-bottom: 2px;">R${r+1}-C${c+1}</div>
+                <div style="font-size: 0.75rem; font-weight: 500;">+ Empty</div>
+              </div>
+            `;
+            cell.ondragover = (e) => handleDragOver(e);
+            cell.ondrop = (e) => handleGridDrop(e, coord);
+            cell.onclick = () => handleGridCellClick(coord, "empty");
+          }
+
+          rowDiv.appendChild(cell);
+        }
+
+        wrap.appendChild(rowDiv);
+      }
+
+      container.innerHTML = "";
+      container.appendChild(wrap);
+    }
+
+    // --- SIDEBAR UNASSIGNED LIST ---
+    function renderUnassignedList(cls) {
+      const list = document.getElementById("unassignedList");
+      list.innerHTML = "";
+      const unassigned = cls.unassigned || [];
+      document.getElementById("unassignedCount").textContent = unassigned.length;
+
+      if (unassigned.length === 0) {
+        list.innerHTML = `<div style="text-align: center; color: #94a3b8; font-size: 0.76rem; padding: 12px;">No unassigned students</div>`;
+        return;
+      }
+
+      unassigned.forEach((student, index) => {
+        const item = document.createElement("div");
+        item.className = "unassigned-item";
+        item.draggable = true;
+        item.ondragstart = (e) => handleUnassignedDragStart(e, student, index);
+        item.onclick = () => handleUnassignedClick(student, index);
+        
+        let tagHtml = "";
+        if (student.tag) {
+          const tagClass = ['SC', 'HC', 'SW', 'BF', '入境'].includes(student.tag) ? `tag-${student.tag}` : 'tag-default';
+          tagHtml = `<span class="tag-badge ${tagClass}">${student.tag}</span>`;
+        }
+
+        item.innerHTML = `
+          <span>👤 ${student.name}</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${tagHtml}
+            <span style="cursor: pointer; color: #94a3b8; font-size: 0.9rem;" onclick="event.stopPropagation(); removeUnassignedStudent(${index})" title="Remove">&times;</span>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function renderSnapshots(cls) {
+      const list = document.getElementById("snapshotList");
+      list.innerHTML = "";
+      const snapshots = cls.snapshots || [];
+      if (snapshots.length === 0) {
+        list.innerHTML = `<div style="font-size: 0.74rem; color: #94a3b8; text-align: center; padding: 8px;">No records yet. Click "Save Session".</div>`;
+        return;
+      }
+
+      snapshots.slice().reverse().forEach((snap, revIdx) => {
+        const idx = snapshots.length - 1 - revIdx;
+        const item = document.createElement("div");
+        item.className = "snapshot-item";
+        item.innerHTML = `
+          <div>
+            <div style="font-weight: 600; color: #1e293b;">${snap.title}</div>
+            <div style="font-size: 0.68rem; color: #64748b;">${snap.time} (${snap.presentCount} Present)</div>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn btn-secondary btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" onclick="loadSnapshot(${idx})">Load</button>
+            <button class="btn btn-secondary btn-sm" style="padding: 2px 5px; font-size: 0.68rem; color: #ef4444;" onclick="deleteSnapshot(${idx})">&times;</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // --- LAYOUT STUDIO MODAL (佈局自訂神器) ---
+    function openLayoutStudioModal() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      selectStudioTemplate(cls.template || "POD-3S");
+      openModal("layoutStudioModal");
+    }
+
+    function selectStudioTemplate(tmplCode) {
+      selectedStudioTemplate = tmplCode;
+      document.querySelectorAll(".template-card").forEach(c => c.classList.remove("active"));
+      const card = document.getElementById(`tmplCard_${tmplCode}`);
+      if (card) card.classList.add("active");
+
+      const configArea = document.getElementById("studioConfigArea");
+      const cls = getCurrentClass();
+
+      if (tmplCode === "POD-3S") {
+        configArea.innerHTML = `
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: #1e293b;">POD-3S : 3-Session Pod Clusters</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Left Section</label>
+              <select class="form-select" id="pod3s_left">
+                <option value="2">2 Groups (Back/Front)</option>
+                <option value="3" selected>3 Groups (Back/Mid/Front)</option>
+                <option value="4">4 Groups</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Center Section</label>
+              <select class="form-select" id="pod3s_mid">
+                <option value="2">2 Groups (Back/Front)</option>
+                <option value="3" selected>3 Groups (Back/Mid/Front)</option>
+                <option value="4">4 Groups</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Right Section</label>
+              <select class="form-select" id="pod3s_right">
+                <option value="2" selected>2 Groups (Back/Front)</option>
+                <option value="3">3 Groups (Back/Mid/Front)</option>
+                <option value="4">4 Groups</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teacher's Desk Location</label>
+            <select class="form-select" id="pod3s_teacher">
+              <option value="BR" selected>Bottom Right (Below Right Front Pod)</option>
+              <option value="BL">Bottom Left</option>
+              <option value="BC">Bottom Center</option>
+              <option value="OFF">Hidden</option>
+            </select>
+          </div>
+        `;
+      } else if (tmplCode === "POD-2S") {
+        configArea.innerHTML = `
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: #1e293b;">POD-2S : 2-Session Pod Clusters</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Left Section</label>
+              <select class="form-select" id="pod2s_left">
+                <option value="2">2 Groups</option>
+                <option value="3" selected>3 Groups</option>
+                <option value="4">4 Groups</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Right Section</label>
+              <select class="form-select" id="pod2s_right">
+                <option value="2">2 Groups</option>
+                <option value="3" selected>3 Groups</option>
+                <option value="4">4 Groups</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teacher's Desk Location</label>
+            <select class="form-select" id="pod2s_teacher">
+              <option value="BC" selected>Bottom Center</option>
+              <option value="BR">Bottom Right</option>
+              <option value="BL">Bottom Left</option>
+            </select>
+          </div>
+        `;
+      } else if (tmplCode === "PAIR-ROW") {
+        configArea.innerHTML = `
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: #1e293b;">PAIR-ROW : Paired Aisles 2-2-2</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Rows (Depth)</label>
+              <input type="number" class="form-input" id="pair_rows" value="5" min="2" max="10">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Cols (Width)</label>
+              <input type="number" class="form-input" id="pair_cols" value="8" min="4" max="16">
+            </div>
+          </div>
+          <p style="font-size: 0.72rem; color: #64748b;">Paired desks with walkways in columns 3 & 6 (2-2-2). Teacher's desk at bottom center.</p>
+        `;
+      } else if (tmplCode === "SEC-ROW") {
+        configArea.innerHTML = `
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: #1e293b;">SEC-ROW : Sectioned Rows</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Sessions</label>
+              <select class="form-select" id="secrow_sections">
+                <option value="2">2 Sessions (Left & Right)</option>
+                <option value="3" selected>3 Sessions (Left, Center, Right)</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Seats Wide / Session</label>
+              <select class="form-select" id="secrow_width">
+                <option value="3">3 Seats</option>
+                <option value="4" selected>4 Seats</option>
+                <option value="5">5 Seats</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Rows Deep</label>
+              <select class="form-select" id="secrow_rows">
+                <option value="3">3 Rows</option>
+                <option value="4" selected>4 Rows</option>
+                <option value="5">5 Rows</option>
+              </select>
+            </div>
+          </div>
+          <p style="font-size: 0.72rem; color: #64748b;">Sections separated by walking aisles. Teacher's desk at bottom center.</p>
+        `;
+      } else if (tmplCode === "LINE-ROW") {
+        configArea.innerHTML = `
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: #1e293b;">LINE-ROW : Single Desk Rows</div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Rows</label>
+              <input type="number" class="form-input" id="line_rows" value="5" min="2" max="10">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Cols</label>
+              <input type="number" class="form-input" id="line_cols" value="6" min="2" max="12">
+            </div>
+          </div>
+          <p style="font-size: 0.72rem; color: #64748b;">Individual examination style desks with alternating aisles.</p>
+        `;
+      } else if (tmplCode === "CUSTOM") {
+        configArea.innerHTML = `
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: #1e293b;">CUSTOM : Manual Configuration</div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="custom_type" onchange="toggleCustomSub(this.value)">
+              <option value="pods">Pod Clusters (圍位小組)</option>
+              <option value="rows">Desk Rows (橫排課桌)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Sessions / Columns</label>
+              <input type="number" class="form-input" id="custom_sessions" value="3" min="1" max="4">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Units per Session</label>
+              <input type="number" class="form-input" id="custom_units" value="3" min="1" max="8">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teacher's Desk</label>
+            <select class="form-select" id="custom_teacher">
+              <option value="BC">Bottom Center</option>
+              <option value="BR">Bottom Right</option>
+              <option value="BL">Bottom Left</option>
+              <option value="OFF">None</option>
+            </select>
+          </div>
+        `;
+      }
+    }
+
+    function applyStudioLayout() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      // Collect all existing students safely
+      let allStudents = [];
+      if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+        (cls.groups || []).forEach(g => allStudents.push(...(g.students || [])));
+      } else {
+        allStudents = Object.values(cls.seats || {});
+      }
+      if (cls.unassigned) allStudents.push(...cls.unassigned);
+
+      const tmpl = selectedStudioTemplate;
+      cls.template = tmpl;
+
+      if (tmpl === "POD-3S") {
+        const left = parseInt(document.getElementById("pod3s_left").value) || 3;
+        const mid = parseInt(document.getElementById("pod3s_mid").value) || 3;
+        const right = parseInt(document.getElementById("pod3s_right").value) || 2;
+        const teacher = document.getElementById("pod3s_teacher").value || "BR";
+
+        const groups = [];
+        let gNum = 1;
+
+        for (let i = 0; i < left; i++) {
+          const pos = (i === 0) ? "Back" : (i === left - 1) ? "Front" : "Mid";
+          groups.push({ id: `g_l_${i+1}`, name: `G${gNum++}`, section: "Left", pos: pos, students: [] });
+        }
+        for (let i = 0; i < mid; i++) {
+          const pos = (i === 0) ? "Back" : (i === mid - 1) ? "Front" : "Mid";
+          groups.push({ id: `g_m_${i+1}`, name: `G${gNum++}`, section: "Center", pos: pos, students: [] });
+        }
+        for (let i = 0; i < right; i++) {
+          const pos = (i === 0) ? "Back" : "Front";
+          groups.push({ id: `g_r_${i+1}`, name: `G${gNum++}`, section: "Right", pos: pos, students: [] });
+        }
+
+        allStudents.forEach((student, idx) => {
+          groups[idx % groups.length].students.push(student);
+        });
+
+        cls.layoutConfig = {
+          type: "pods",
+          sections: 3,
+          sectionGroups: [left, mid, right],
+          teacherDesk: teacher
+        };
+        cls.groups = groups;
+        cls.seats = {};
+        cls.unassigned = [];
+      } else if (tmpl === "POD-2S") {
+        const left = parseInt(document.getElementById("pod2s_left").value) || 3;
+        const right = parseInt(document.getElementById("pod2s_right").value) || 3;
+        const teacher = document.getElementById("pod2s_teacher").value || "BC";
+
+        const groups = [];
+        let gNum = 1;
+
+        for (let i = 0; i < left; i++) {
+          const pos = (i === 0) ? "Back" : (i === left - 1) ? "Front" : "Mid";
+          groups.push({ id: `g_l_${i+1}`, name: `G${gNum++}`, section: "Left", pos: pos, students: [] });
+        }
+        for (let i = 0; i < right; i++) {
+          const pos = (i === 0) ? "Back" : (i === right - 1) ? "Front" : "Mid";
+          groups.push({ id: `g_r_${i+1}`, name: `G${gNum++}`, section: "Right", pos: pos, students: [] });
+        }
+
+        allStudents.forEach((student, idx) => {
+          groups[idx % groups.length].students.push(student);
+        });
+
+        cls.layoutConfig = {
+          type: "pods",
+          sections: 2,
+          sectionGroups: [left, right],
+          teacherDesk: teacher
+        };
+        cls.groups = groups;
+        cls.seats = {};
+        cls.unassigned = [];
+      } else if (tmpl === "PAIR-ROW") {
+        const rows = parseInt(document.getElementById("pair_rows").value) || 5;
+        const cols = parseInt(document.getElementById("pair_cols").value) || 8;
+        const aisles = [];
+        for (let r = 0; r < rows; r++) {
+          aisles.push(`${r}-2`);
+          aisles.push(`${r}-5`);
+        }
+
+        const seats = {};
+        const unassigned = [];
+        let sIdx = 0;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const coord = `${r}-${c}`;
+            if (aisles.includes(coord)) continue;
+            if (sIdx < allStudents.length) {
+              seats[coord] = allStudents[sIdx++];
+            }
+          }
+        }
+        while (sIdx < allStudents.length) {
+          unassigned.push(allStudents[sIdx++]);
+        }
+
+        cls.layoutConfig = {
+          type: "grid",
+          rows: rows,
+          cols: cols,
+          pattern: "paired_aisle",
+          aisles: aisles,
+          teacherDesk: "BC"
+        };
+        cls.seats = seats;
+        cls.unassigned = unassigned;
+        cls.groups = [];
+      } else if (tmpl === "SEC-ROW") {
+        const sections = parseInt(document.getElementById("secrow_sections").value) || 3;
+        const seatsPerSec = parseInt(document.getElementById("secrow_width").value) || 4;
+        const rows = parseInt(document.getElementById("secrow_rows").value) || 4;
+
+        // Calculate total cols = sections * seatsPerSec + (sections - 1) aisles
+        const aisles = [];
+        let colIndex = 0;
+        for (let s = 0; s < sections; s++) {
+          colIndex += seatsPerSec;
+          if (s < sections - 1) {
+            for (let r = 0; r < rows; r++) {
+              aisles.push(`${r}-${colIndex}`);
+            }
+            colIndex += 1; // skip aisle
+          }
+        }
+        const totalCols = colIndex;
+
+        const seats = {};
+        const unassigned = [];
+        let sIdx = 0;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < totalCols; c++) {
+            const coord = `${r}-${c}`;
+            if (aisles.includes(coord)) continue;
+            if (sIdx < allStudents.length) {
+              seats[coord] = allStudents[sIdx++];
+            }
+          }
+        }
+        while (sIdx < allStudents.length) {
+          unassigned.push(allStudents[sIdx++]);
+        }
+
+        cls.layoutConfig = {
+          type: "grid",
+          rows: rows,
+          cols: totalCols,
+          pattern: "section_rows",
+          aisles: aisles,
+          teacherDesk: "BC"
+        };
+        cls.seats = seats;
+        cls.unassigned = unassigned;
+        cls.groups = [];
+      } else if (tmpl === "LINE-ROW") {
+        const rows = parseInt(document.getElementById("line_rows").value) || 5;
+        const cols = parseInt(document.getElementById("line_cols").value) || 6;
+        const aisles = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 1; c < cols; c += 2) {
+            aisles.push(`${r}-${c}`);
+          }
+        }
+
+        const seats = {};
+        const unassigned = [];
+        let sIdx = 0;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const coord = `${r}-${c}`;
+            if (aisles.includes(coord)) continue;
+            if (sIdx < allStudents.length) {
+              seats[coord] = allStudents[sIdx++];
+            }
+          }
+        }
+        while (sIdx < allStudents.length) {
+          unassigned.push(allStudents[sIdx++]);
+        }
+
+        cls.layoutConfig = {
+          type: "grid",
+          rows: rows,
+          cols: cols,
+          pattern: "single_rows",
+          aisles: aisles,
+          teacherDesk: "BC"
+        };
+        cls.seats = seats;
+        cls.unassigned = unassigned;
+        cls.groups = [];
+      } else if (tmpl === "CUSTOM") {
+        const cType = document.getElementById("custom_type").value;
+        const cSessions = parseInt(document.getElementById("custom_sessions").value) || 3;
+        const cUnits = parseInt(document.getElementById("custom_units").value) || 3;
+        const cTeacher = document.getElementById("custom_teacher").value;
+
+        if (cType === "pods") {
+          const groups = [];
+          let gNum = 1;
+          for (let s = 0; s < cSessions; s++) {
+            const sName = (s === 0) ? "Left" : (s === cSessions - 1) ? "Right" : "Center";
+            for (let u = 0; u < cUnits; u++) {
+              const pos = (u === 0) ? "Back" : (u === cUnits - 1) ? "Front" : "Mid";
+              groups.push({ id: `g_c_${s}_${u}`, name: `G${gNum++}`, section: sName, pos: pos, students: [] });
+            }
+          }
+          allStudents.forEach((student, idx) => {
+            groups[idx % groups.length].students.push(student);
+          });
+          cls.layoutConfig = {
+            type: "pods",
+            sections: cSessions,
+            sectionGroups: new Array(cSessions).fill(cUnits),
+            teacherDesk: cTeacher
+          };
+          cls.groups = groups;
+          cls.seats = {};
+          cls.unassigned = [];
+        } else {
+          const rows = cUnits;
+          const cols = cSessions * 2;
+          const aisles = [];
+          const seats = {};
+          const unassigned = [];
+          let sIdx = 0;
+
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              if (sIdx < allStudents.length) {
+                seats[`${r}-${c}`] = allStudents[sIdx++];
+              }
+            }
+          }
+          while (sIdx < allStudents.length) {
+            unassigned.push(allStudents[sIdx++]);
+          }
+          cls.layoutConfig = {
+            type: "grid",
+            rows: rows,
+            cols: cols,
+            pattern: "custom",
+            aisles: aisles,
+            teacherDesk: cTeacher
+          };
+          cls.seats = seats;
+          cls.unassigned = unassigned;
+          cls.groups = [];
+        }
+      }
+
+      closeModal("layoutStudioModal");
+      saveState();
+      renderTabs();
+      renderCurrentClass();
+      showToast(`Layout updated to ${cls.template}!`);
+    }
+
+    // --- INTERACTIONS: GROUP MODE ---
+    function handleStudentDragStart(e, student, groupId, sourceType) {
+      draggedItem = { student, groupId, sourceType };
+      e.dataTransfer.setData("text/plain", JSON.stringify(draggedItem));
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleGroupDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const card = e.currentTarget;
+      card.classList.add("drag-target");
+    }
+
+    function handleGroupDragLeave(e) {
+      const card = e.currentTarget;
+      card.classList.remove("drag-target");
+    }
+
+    function handleGroupDrop(e, targetGroupId) {
+      e.preventDefault();
+      document.querySelectorAll(".group-card").forEach(c => c.classList.remove("drag-target"));
+
+      const cls = getCurrentClass();
+      if (!cls || !draggedItem) return;
+
+      const targetGroup = cls.groups.find(g => g.id === targetGroupId);
+      if (!targetGroup) return;
+
+      if (draggedItem.sourceType === "group") {
+        const sourceGroupId = draggedItem.groupId;
+        const studentId = draggedItem.student.id;
+        const sourceGroup = cls.groups.find(g => g.id === sourceGroupId);
+
+        if (sourceGroupId === targetGroupId) return;
+
+        const sIdx = sourceGroup.students.findIndex(s => s.id === studentId);
+        if (sIdx >= 0) {
+          const [movedStudent] = sourceGroup.students.splice(sIdx, 1);
+          targetGroup.students.push(movedStudent);
+          showToast(`Moved ${movedStudent.name} -> ${targetGroup.name}`);
+        }
+      } else if (draggedItem.sourceType === "unassigned") {
+        const unassignedIdx = draggedItem.index;
+        const [movedStudent] = cls.unassigned.splice(unassignedIdx, 1);
+        targetGroup.students.push(movedStudent);
+        showToast(`Assigned ${movedStudent.name} -> ${targetGroup.name}`);
+      }
+
+      draggedItem = null;
+      saveState();
+      renderCurrentClass();
+    }
+
+    function handleStudentClickInGroup(student, groupId) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      if (interactionMode === "attendance") {
+        const group = cls.groups.find(g => g.id === groupId);
+        const s = group.students.find(x => x.id === student.id);
+        if (s) {
+          const statuses = ["present", "absent", "late", "leave"];
+          const next = (statuses.indexOf(s.status || "present") + 1) % statuses.length;
+          s.status = statuses[next];
+          saveState();
+          renderCurrentClass();
+        }
+        return;
+      }
+
+      if (interactionMode === "click") {
+        if (!selectedItem) {
+          selectedItem = { student, groupId, sourceType: 'group' };
+          document.getElementById("selectionBanner").style.display = "flex";
+          document.getElementById("selectionBannerText").textContent = `💡 Selected ${student.name}. Click another student to swap.`;
+          renderCurrentClass();
+        } else {
+          if (selectedItem.student.id === student.id) {
+            clearSelection();
+            return;
+          }
+
+          const groupA = cls.groups.find(g => g.id === selectedItem.groupId);
+          const groupB = cls.groups.find(g => g.id === groupId);
+
+          const idxA = groupA.students.findIndex(s => s.id === selectedItem.student.id);
+          const idxB = groupB.students.findIndex(s => s.id === student.id);
+
+          if (idxA >= 0 && idxB >= 0) {
+            const studentA = groupA.students[idxA];
+            const studentB = groupB.students[idxB];
+            groupA.students[idxA] = studentB;
+            groupB.students[idxB] = studentA;
+            showToast(`Swapped: ${studentA.name} ⇄ ${studentB.name}`);
+          }
+
+          clearSelection();
+          saveState();
+          renderCurrentClass();
+        }
+      }
+    }
+
+    function cycleStudentAttendanceInGroup(groupId, sIdx) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      const group = cls.groups.find(g => g.id === groupId);
+      if (!group || !group.students[sIdx]) return;
+
+      const s = group.students[sIdx];
+      const statuses = ["present", "absent", "late", "leave"];
+      const next = (statuses.indexOf(s.status || "present") + 1) % statuses.length;
+      s.status = statuses[next];
+
+      saveState();
+      renderCurrentClass();
+    }
+
+    function markGroupPresent(groupId) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      const group = cls.groups.find(g => g.id === groupId);
+      if (!group) return;
+      (group.students || []).forEach(s => s.status = "present");
+      saveState();
+      renderCurrentClass();
+      showToast(`${group.name} marked all present!`);
+    }
+
+    function addStudentToGroup(groupId) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      const group = cls.groups.find(g => g.id === groupId);
+      if (!group) return;
+
+      const name = prompt(`Enter student name for ${group.name}:`);
+      if (!name || !name.trim()) return;
+
+      group.students.push({
+        id: "s_add_" + Date.now(),
+        name: name.trim(),
+        tag: "",
+        status: "present"
+      });
+
+      saveState();
+      renderCurrentClass();
+      showToast(`Added ${name.trim()} to ${group.name}`);
+    }
+
+    function renameGroup(groupId) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      const group = cls.groups.find(g => g.id === groupId);
+      if (!group) return;
+
+      const newName = prompt("New group name:", group.name);
+      if (newName && newName.trim()) {
+        group.name = newName.trim();
+        saveState();
+        renderCurrentClass();
+      }
+    }
+
+    // --- INTERACTIONS: GRID MODE (for DAE) ---
+    function handleGridDragStart(e, coord) {
+      const cls = getCurrentClass();
+      if (!cls || !cls.seats[coord]) return;
+      draggedItem = { coord, student: cls.seats[coord], sourceType: 'grid' };
+      e.dataTransfer.setData("text/plain", JSON.stringify(draggedItem));
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+
+    function handleGridDrop(e, targetCoord) {
+      e.preventDefault();
+      const cls = getCurrentClass();
+      if (!cls || !draggedItem) return;
+
+      if (cls.layoutConfig.aisles && cls.layoutConfig.aisles.includes(targetCoord)) {
+        cls.layoutConfig.aisles = cls.layoutConfig.aisles.filter(a => a !== targetCoord);
+      }
+
+      if (draggedItem.sourceType === "grid") {
+        const sourceCoord = draggedItem.coord;
+        if (sourceCoord === targetCoord) return;
+
+        const sourceStudent = cls.seats[sourceCoord];
+        const targetStudent = cls.seats[targetCoord];
+
+        if (targetStudent) {
+          cls.seats[targetCoord] = sourceStudent;
+          cls.seats[sourceCoord] = targetStudent;
+          showToast(`Swapped: ${sourceStudent.name} ⇄ ${targetStudent.name}`);
+        } else {
+          cls.seats[targetCoord] = sourceStudent;
+          delete cls.seats[sourceCoord];
+          showToast(`Moved ${sourceStudent.name}`);
+        }
+      } else if (draggedItem.sourceType === "unassigned") {
+        const studentIndex = draggedItem.index;
+        const [student] = cls.unassigned.splice(studentIndex, 1);
+        const existingStudent = cls.seats[targetCoord];
+
+        cls.seats[targetCoord] = student;
+        if (existingStudent) {
+          cls.unassigned.push(existingStudent);
+          showToast(`Assigned ${student.name}, moved ${existingStudent.name} to unassigned`);
+        } else {
+          showToast(`Assigned ${student.name}`);
+        }
+      }
+
+      draggedItem = null;
+      saveState();
+      renderCurrentClass();
+    }
+
+    function handleGridCellClick(coord, type) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      if (interactionMode === "attendance") {
+        if (type === "occupied") cycleGridAttendance(coord);
+        return;
+      }
+
+      if (interactionMode === "click") {
+        if (!selectedItem) {
+          if (type === "occupied") {
+            selectedItem = { coord, student: cls.seats[coord], sourceType: 'grid' };
+            document.getElementById("selectionBanner").style.display = "flex";
+            document.getElementById("selectionBannerText").textContent = `💡 Selected ${selectedItem.student.name}. Click target seat to swap or move.`;
+            renderCurrentClass();
+          }
+        } else {
+          if (selectedItem.coord === coord) {
+            clearSelection();
+            return;
+          }
+
+          const sourceStudent = cls.seats[selectedItem.coord];
+          const targetStudent = cls.seats[coord];
+
+          if (cls.layoutConfig.aisles && cls.layoutConfig.aisles.includes(coord)) {
+            cls.layoutConfig.aisles = cls.layoutConfig.aisles.filter(a => a !== coord);
+          }
+
+          if (targetStudent) {
+            cls.seats[coord] = sourceStudent;
+            cls.seats[selectedItem.coord] = targetStudent;
+            showToast(`Swapped: ${sourceStudent.name} ⇄ ${targetStudent.name}`);
+          } else {
+            cls.seats[coord] = sourceStudent;
+            delete cls.seats[selectedItem.coord];
+            showToast(`Moved ${sourceStudent.name}`);
+          }
+
+          clearSelection();
+          saveState();
+          renderCurrentClass();
+        }
+      }
+    }
+
+    function cycleGridAttendance(coord) {
+      const cls = getCurrentClass();
+      if (!cls || !cls.seats[coord]) return;
+      const s = cls.seats[coord];
+      const statuses = ["present", "absent", "late", "leave"];
+      const next = (statuses.indexOf(s.status || "present") + 1) % statuses.length;
+      s.status = statuses[next];
+      saveState();
+      renderCurrentClass();
+    }
+
+    // --- UNASSIGNED SIDEBAR ---
+    function handleUnassignedDragStart(e, student, index) {
+      draggedItem = { student, index, sourceType: 'unassigned' };
+      e.dataTransfer.setData("text/plain", JSON.stringify(draggedItem));
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDropToUnassigned(e) {
+      e.preventDefault();
+      const cls = getCurrentClass();
+      if (!cls || !draggedItem) return;
+
+      if (draggedItem.sourceType === "group") {
+        const group = cls.groups.find(g => g.id === draggedItem.groupId);
+        if (group) {
+          const idx = group.students.findIndex(s => s.id === draggedItem.student.id);
+          if (idx >= 0) {
+            const [student] = group.students.splice(idx, 1);
+            if (!cls.unassigned) cls.unassigned = [];
+            cls.unassigned.push(student);
+            showToast(`Moved ${student.name} to unassigned`);
+          }
+        }
+      } else if (draggedItem.sourceType === "grid") {
+        const student = cls.seats[draggedItem.coord];
+        if (student) {
+          delete cls.seats[draggedItem.coord];
+          if (!cls.unassigned) cls.unassigned = [];
+          cls.unassigned.push(student);
+          showToast(`Moved ${student.name} to unassigned`);
+        }
+      }
+
+      draggedItem = null;
+      saveState();
+      renderCurrentClass();
+    }
+
+    function removeUnassignedStudent(index) {
+      const cls = getCurrentClass();
+      if (!cls || !cls.unassigned) return;
+      const [removed] = cls.unassigned.splice(index, 1);
+      saveState();
+      renderCurrentClass();
+      showToast(`Removed ${removed.name}`);
+    }
+
+    // Touch Polyfill
+    function setupTouchDragSupport() {
+      let touchDragged = null;
+      document.addEventListener("touchstart", (e) => {
+        const studentElem = e.target.closest(".student-card") || e.target.closest(".desk-cell") || e.target.closest(".unassigned-item");
+        if (!studentElem) return;
+
+        const cls = getCurrentClass();
+        if (!cls) return;
+
+        if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+          const sId = studentElem.dataset.studentId;
+          if (sId) {
+            for (let g of cls.groups) {
+              const s = g.students.find(x => x.id === sId);
+              if (s) {
+                touchDragged = { student: s, groupId: g.id, sourceType: 'group' };
+                break;
+              }
+            }
+          }
+        } else {
+          const coord = studentElem.dataset.coord;
+          if (coord && cls.seats[coord]) {
+            touchDragged = { coord, student: cls.seats[coord], sourceType: 'grid' };
+          }
+        }
+      }, { passive: true });
+
+      document.addEventListener("touchend", (e) => {
+        if (!touchDragged) return;
+        const touch = e.changedTouches[0];
+        const targetElem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!targetElem) { touchDragged = null; return; }
+
+        const targetGroup = targetElem.closest(".group-card");
+        const targetCell = targetElem.closest(".desk-cell");
+        const targetUnassigned = targetElem.closest("#unassignedList");
+
+        draggedItem = touchDragged;
+
+        if (targetGroup && targetGroup.dataset.groupId) {
+          handleGroupDrop(e, targetGroup.dataset.groupId);
+        } else if (targetCell && targetCell.dataset.coord) {
+          handleGridDrop(e, targetCell.dataset.coord);
+        } else if (targetUnassigned) {
+          handleDropToUnassigned(e);
+        }
+
+        touchDragged = null;
+      });
+    }
+
+    // Mode toggling
+    function setInteractionMode(mode) {
+      interactionMode = mode;
+      document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+      if (mode === "drag") document.getElementById("modeDrag").classList.add("active");
+      else if (mode === "click") document.getElementById("modeClick").classList.add("active");
+      else if (mode === "attendance") document.getElementById("modeAttendance").classList.add("active");
+
+      clearSelection();
+      renderCurrentClass();
+    }
+
+    function clearSelection() {
+      selectedItem = null;
+      document.getElementById("selectionBanner").style.display = "none";
+      document.querySelectorAll(".student-card, .desk-cell").forEach(c => c.classList.remove("selected"));
+    }
+
+    function handleSearch(q) {
+      searchQuery = (q || "").trim().toLowerCase();
+      document.querySelectorAll(".student-card, .desk-cell").forEach(elem => {
+        if (!searchQuery) {
+          elem.style.outline = "";
+          elem.style.opacity = "";
+          return;
+        }
+        const text = elem.textContent.toLowerCase();
+        if (text.includes(searchQuery)) {
+          elem.style.outline = "2px solid #f59e0b";
+          elem.style.opacity = "1";
+        } else {
+          elem.style.outline = "";
+          elem.style.opacity = "0.35";
+        }
+      });
+    }
+
+    function markAllPresent() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+        (cls.groups || []).forEach(g => (g.students || []).forEach(s => s.status = "present"));
+      } else {
+        Object.values(cls.seats || {}).forEach(s => s.status = "present");
+      }
+      saveState();
+      renderCurrentClass();
+      showToast("Marked all present!");
+    }
+
+    function saveLessonSnapshot() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+      const defaultTitle = `${dateStr} Session`;
+      const title = prompt("Snapshot Title:", defaultTitle);
+      if (!title) return;
+
+      if (!cls.snapshots) cls.snapshots = [];
+
+      let presentCount = 0;
+      if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+        cls.groups.forEach(g => g.students.forEach(s => { if (s.status === "present" || !s.status) presentCount++; }));
+      } else {
+        Object.values(cls.seats || {}).forEach(s => { if (s.status === "present" || !s.status) presentCount++; });
+      }
+
+      cls.snapshots.push({
+        id: "snap_" + Date.now(),
+        title: title,
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: dateStr,
+        presentCount: presentCount,
+        template: cls.template,
+        layoutConfig: JSON.parse(JSON.stringify(cls.layoutConfig)),
+        groups: cls.groups ? JSON.parse(JSON.stringify(cls.groups)) : null,
+        seats: cls.seats ? JSON.parse(JSON.stringify(cls.seats)) : null,
+        unassigned: JSON.parse(JSON.stringify(cls.unassigned || []))
+      });
+
+      saveState();
+      renderCurrentClass();
+      showToast(`Saved session snapshot: ${title}`);
+    }
+
+    function loadSnapshot(idx) {
+      const cls = getCurrentClass();
+      if (!cls || !cls.snapshots || !cls.snapshots[idx]) return;
+      if (!confirm("Apply this session snapshot?")) return;
+
+      const snap = cls.snapshots[idx];
+      if (snap.template) cls.template = snap.template;
+      if (snap.layoutConfig) cls.layoutConfig = JSON.parse(JSON.stringify(snap.layoutConfig));
+      if (snap.groups) cls.groups = JSON.parse(JSON.stringify(snap.groups));
+      if (snap.seats) cls.seats = JSON.parse(JSON.stringify(snap.seats));
+      cls.unassigned = JSON.parse(JSON.stringify(snap.unassigned || []));
+
+      saveState();
+      renderCurrentClass();
+      showToast(`Loaded: ${snap.title}`);
+    }
+
+    function deleteSnapshot(idx) {
+      const cls = getCurrentClass();
+      if (!cls || !cls.snapshots) return;
+      if (!confirm("Delete this record?")) return;
+      cls.snapshots.splice(idx, 1);
+      saveState();
+      renderCurrentClass();
+      showToast("Deleted record");
+    }
+
+    function resetToBaseSeating() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      const def = DEFAULT_CLASSES.find(d => d.id === cls.id);
+      if (def) {
+        if (!confirm(`Reset ${cls.name} to default initial layout?`)) return;
+        cls.template = def.template;
+        cls.layoutConfig = JSON.parse(JSON.stringify(def.layoutConfig));
+        cls.groups = def.groups ? JSON.parse(JSON.stringify(def.groups)) : [];
+        cls.seats = def.seats ? JSON.parse(JSON.stringify(def.seats)) : {};
+        cls.unassigned = JSON.parse(JSON.stringify(def.unassigned || []));
+        saveState();
+        renderCurrentClass();
+        showToast("Reset to default layout!");
+      }
+    }
+
+    function saveCurrentAsMaster() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      if (!confirm("Save current arrangement as new master default?")) return;
+      if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
+        cls.groups.forEach(g => g.students.forEach(s => s.status = "present"));
+      } else {
+        Object.values(cls.seats || {}).forEach(s => s.status = "present");
+      }
+      saveState();
+      renderCurrentClass();
+      showToast("Saved as new master default!");
+    }
+
+    function checkGitHubSync() {
+      fetch('./classes_backup.json')
+        .then(response => {
+          if (!response.ok) throw new Error('Cannot find classes_backup.json');
+          return response.json();
+        })
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            if (confirm(`Loaded classes_backup.json with ${data.length} classes. Sync now?`)) {
+              classes = data;
+              currentClassId = classes[0].id;
+              saveState();
+              renderTabs();
+              renderCurrentClass();
+              showToast("Synced successfully from GitHub server!");
+            }
+          }
+        })
+        .catch(err => {
+          alert("Cannot load classes_backup.json from server. Use 'Import' button if on local file.\nDetails: " + err.message);
+        });
+    }
+
+    function toggleArchiveCurrentClass() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      if (cls.status === "active") {
+        if (!confirm(`Archive ${cls.name}?`)) return;
+        cls.status = "archived";
+        showToast(`Archived ${cls.name}`);
+        const remaining = classes.filter(c => c.status === "active");
+        currentClassId = remaining[0]?.id || "";
+      } else {
+        cls.status = "active";
+        showToast(`Restored ${cls.name}!`);
+        activeFilter = "active";
+        setFilter("active");
+        currentClassId = cls.id;
+      }
+
+      saveState();
+      renderTabs();
+      renderCurrentClass();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add("show"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+
+    function openNewClassModal() {
+      document.getElementById("newClassName").value = "";
+      document.getElementById("newClassStudents").value = "";
+      openModal("newClassModal");
+    }
+
+    function submitNewClass() {
+      const name = document.getElementById("newClassName").value.trim();
+      const tmpl = document.getElementById("newClassTemplate").value;
+      const studentText = document.getElementById("newClassStudents").value;
+
+      if (!name) { alert("Please enter class name!"); return; }
+
+      const classId = "class_" + Date.now();
+      const rawLines = studentText.split("\n").map(l => l.trim()).filter(l => l);
+      const parsedStudents = rawLines.map((line, idx) => {
+        let tag = "";
+        for (let t of ["SC", "HC", "SW", "BF", "入境"]) {
+          if (line.includes(t)) { tag = t; break; }
+        }
+        return {
+          id: `s_${classId}_${idx+1}`,
+          name: line,
+          tag: tag,
+          status: "present"
+        };
+      });
+
+      let newCls = {
+        id: classId,
+        name: name,
+        room: "",
+        status: "active",
+        template: tmpl,
+        layoutConfig: {},
+        unassigned: [],
+        snapshots: []
+      };
+
+      if (tmpl === "POD-3S") {
+        newCls.layoutConfig = { type: "pods", sections: 3, sectionGroups: [3, 3, 2], teacherDesk: "BR" };
+        const groups = [
+          { id: `g_${classId}_1`, name: "G1", section: "Left", pos: "Back", students: [] },
+          { id: `g_${classId}_2`, name: "G2", section: "Left", pos: "Mid", students: [] },
+          { id: `g_${classId}_3`, name: "G3", section: "Left", pos: "Front", students: [] },
+          { id: `g_${classId}_4`, name: "G4", section: "Center", pos: "Back", students: [] },
+          { id: `g_${classId}_5`, name: "G5", section: "Center", pos: "Mid", students: [] },
+          { id: `g_${classId}_6`, name: "G6", section: "Center", pos: "Front", students: [] },
+          { id: `g_${classId}_7`, name: "G7", section: "Right", pos: "Back", students: [] },
+          { id: `g_${classId}_8`, name: "G8", section: "Right", pos: "Front", students: [] }
+        ];
+        parsedStudents.forEach((student, idx) => groups[idx % groups.length].students.push(student));
+        newCls.groups = groups;
+      } else if (tmpl === "POD-2S") {
+        newCls.layoutConfig = { type: "pods", sections: 2, sectionGroups: [3, 3], teacherDesk: "BC" };
+        const groups = [
+          { id: `g_${classId}_1`, name: "G1", section: "Left", pos: "Back", students: [] },
+          { id: `g_${classId}_2`, name: "G2", section: "Left", pos: "Mid", students: [] },
+          { id: `g_${classId}_3`, name: "G3", section: "Left", pos: "Front", students: [] },
+          { id: `g_${classId}_4`, name: "G4", section: "Right", pos: "Back", students: [] },
+          { id: `g_${classId}_5`, name: "G5", section: "Right", pos: "Mid", students: [] },
+          { id: `g_${classId}_6`, name: "G6", section: "Right", pos: "Front", students: [] }
+        ];
+        parsedStudents.forEach((student, idx) => groups[idx % groups.length].students.push(student));
+        newCls.groups = groups;
+      } else {
+        const rows = 5;
+        const cols = 8;
+        const aisles = ["0-2", "1-2", "2-2", "3-2", "4-2", "0-5", "1-5", "2-5", "3-5", "4-5"];
+        newCls.layoutConfig = { type: "grid", rows, cols, pattern: "paired_aisle", aisles, teacherDesk: "BC" };
+        newCls.seats = {};
+
+        let sIdx = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (aisles.includes(`${r}-${c}`)) continue;
+            if (sIdx < parsedStudents.length) {
+              newCls.seats[`${r}-${c}`] = parsedStudents[sIdx++];
+            }
+          }
+        }
+        while (sIdx < parsedStudents.length) {
+          newCls.unassigned.push(parsedStudents[sIdx++]);
+        }
+      }
+
+      classes.push(newCls);
+      currentClassId = classId;
+      activeFilter = "active";
+      setFilter("active");
+
+      closeModal("newClassModal");
+      saveState();
+      renderTabs();
+      renderCurrentClass();
+      showToast(`Class ${name} created!`);
+    }
+
+    function openAddStudentModal() {
+      document.getElementById("newStudentName").value = "";
+      document.getElementById("newStudentTag").value = "";
+      openModal("addStudentModal");
+    }
+
+    function submitAddStudent() {
+      const name = document.getElementById("newStudentName").value.trim();
+      const tag = document.getElementById("newStudentTag").value.trim();
+      if (!name) { alert("Please enter name!"); return; }
+
+      const cls = getCurrentClass();
+      if (!cls) return;
+      if (!cls.unassigned) cls.unassigned = [];
+
+      cls.unassigned.push({
+        id: "s_" + Date.now(),
+        name: name,
+        tag: tag,
+        status: "present"
+      });
+
+      closeModal("addStudentModal");
+      saveState();
+      renderCurrentClass();
+      showToast(`Added ${name}`);
+    }
+
+    function printSeatingChart() {
+      const cls = getCurrentClass();
+      if (!cls) return;
+      document.getElementById("printTitle").textContent = `${cls.name} Seating Plan`;
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      document.getElementById("printSubtitle").textContent = `Layout: ${cls.template || 'Default'} | Date: ${dateStr}`;
+      window.print();
+    }
+
+    function exportData() {
+      const jsonStr = JSON.stringify(classes, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `classes_backup.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Exported classes_backup.json!");
+    }
+
+    function triggerImport() { document.getElementById("importFileInput").click(); }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (Array.isArray(data) && data.length > 0 && data[0].id) {
+            if (confirm(`Detected backup with ${data.length} classes. Import now?`)) {
+              classes = data;
+              currentClassId = classes[0].id;
+              saveState();
+              renderTabs();
+              renderCurrentClass();
+              showToast("Backup imported successfully!");
+            }
+          } else {
+            alert("Invalid backup file format!");
+          }
+        } catch (err) {
+          alert("Error reading file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
