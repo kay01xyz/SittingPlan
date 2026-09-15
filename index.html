@@ -509,6 +509,60 @@
       color: #fbbf24;
     }
 
+    
+    /* Prevent horizontal swipe back/forward navigation gestures on touchscreens & trackpads */
+    html, body {
+      overscroll-behavior-x: none;
+      overscroll-behavior: none;
+    }
+
+    .app-main, .view-panel, .side-panel, .unassigned-list {
+      overscroll-behavior: contain;
+    }
+
+    .student-card, .desk-cell, .unassigned-item {
+      touch-action: none;
+    }
+
+    /* Long name display and hover inspection */
+    .student-card, .desk-cell {
+      position: relative;
+    }
+
+    .student-card:hover, .desk-cell:hover {
+      z-index: 30 !important;
+    }
+
+    .student-card:hover .student-name-text,
+    .desk-cell:hover .student-name-text {
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
+
+    .btn-del-mini {
+      background: none;
+      border: none;
+      font-size: 0.72rem;
+      cursor: pointer;
+      opacity: 0.6;
+      padding: 1px 3px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      color: #dc2626;
+    }
+    .btn-del-mini:hover {
+      opacity: 1;
+      background: #fee2e2;
+    }
+
+    #unassignedCard.drag-target {
+      border-color: #2563eb !important;
+      background: #eff6ff !important;
+      outline: 2px dashed #2563eb;
+    }
+
     /* Student Card inside Group */
     .student-card {
       background: white;
@@ -1216,10 +1270,14 @@
     </div>
   </div>
 
-  <!-- Selection Banner (Click-to-Swap) -->
-  <div id="selectionBanner" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 6px 20px; font-size: 0.82rem; color: #1e40af; align-items: center; justify-content: space-between;">
-    <span id="selectionBannerText">💡 Selected student. Click target seat or another student to swap.</span>
-    <button class="btn btn-secondary btn-sm" onclick="clearSelection()" style="padding: 2px 6px; font-size: 0.72rem;">Cancel</button>
+  <!-- Selection Banner (Click-to-Swap, Park, Delete) -->
+  <div id="selectionBanner" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 6px 20px; font-size: 0.82rem; color: #1e40af; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+    <span id="selectionBannerText" style="font-weight: 600;">💡 Selected student.</span>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <button class="btn btn-primary btn-sm" onclick="parkSelectedStudentToUnassigned()" style="padding: 3px 9px; font-size: 0.75rem; background: #2563eb;" title="將此學生暫泊至右側未分配區">📥 暫泊至未分配</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSelectedStudent()" style="padding: 3px 9px; font-size: 0.75rem; background: #dc2626; color: white; border-color: #b91c1c;" title="從此班名單中徹底刪除此學生">🗑️ 刪除學生</button>
+      <button class="btn btn-secondary btn-sm" onclick="clearSelection()" style="padding: 3px 8px; font-size: 0.75rem;">取消</button>
+    </div>
   </div>
 
   <!-- Main Workspace Area -->
@@ -1243,13 +1301,16 @@
 
     <!-- Side Panel -->
     <aside class="side-panel" id="sidePanel">
-      <div class="side-card">
+      <div class="side-card" id="unassignedCard" ondragover="handleUnassignedCardDragOver(event)" ondragleave="handleUnassignedCardDragLeave(event)" ondrop="handleDropToUnassigned(event)" onclick="handleUnassignedCardClick(event)">
         <h3>
           <span>📋 Unassigned (<span id="unassignedCount">0</span>)</span>
-          <button class="btn btn-secondary btn-sm" onclick="openAddStudentModal()" style="padding: 2px 6px; font-size: 0.7rem;">+ Add</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openAddStudentModal()" style="padding: 2px 6px; font-size: 0.7rem;">+ Add</button>
         </h3>
-        <p style="font-size: 0.74rem; color: var(--gray-600);">Drag students here to park, or drag back to seats.</p>
-        <div class="unassigned-list" id="unassignedList" ondragover="handleDragOver(event)" ondrop="handleDropToUnassigned(event)"></div>
+        <p style="font-size: 0.74rem; color: var(--gray-600);">拖曳學生至此暫存，或選取學生後點擊此處。</p>
+        <div id="clickToParkPrompt" style="display: none; background: #eff6ff; border: 1.5px dashed #3b82f6; color: #1d4ed8; font-weight: 600; font-size: 0.75rem; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; text-align: center; cursor: pointer;">
+          📥 點此將選取的學生暫泊於此 (Park Here)
+        </div>
+        <div class="unassigned-list" id="unassignedList"></div>
       </div>
 
       <div class="side-card">
@@ -2190,6 +2251,168 @@
 
     const STORAGE_KEY = "CLASSROOM_MASTER_DATA_V6";
 
+    
+    // ============================================================
+    // UNDO / REDO HISTORY ENGINE (還原上一步)
+    // ============================================================
+    let historyStack = [];
+    const MAX_HISTORY = 30;
+
+    function pushHistory() {
+      try {
+        historyStack.push(JSON.stringify(classes));
+        if (historyStack.length > MAX_HISTORY) historyStack.shift();
+        updateUndoButtonState();
+      } catch (err) {
+        console.warn("History push error:", err);
+      }
+    }
+
+    window.undoLastAction = function() {
+      if (historyStack.length === 0) {
+        showToast("沒有可以還原的步驟");
+        return;
+      }
+      const previousState = historyStack.pop();
+      try {
+        classes = sanitizeClasses(JSON.parse(previousState));
+        clearSelection();
+        saveState();
+        renderTabs();
+        renderCurrentClass();
+        updateUndoButtonState();
+        showToast("↩️ 已成功還原上一步！");
+      } catch (err) {
+        console.error("Undo error:", err);
+        showToast("還原失敗：" + err.message);
+      }
+    };
+
+    function updateUndoButtonState() {
+      const btn = document.getElementById("undoBtn");
+      if (!btn) return;
+      if (historyStack.length > 0) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.textContent = `↩️ Undo (${historyStack.length})`;
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        btn.textContent = "↩️ Undo";
+      }
+    }
+
+    // Bind Ctrl+Z / Cmd+Z keyboard shortcut
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+        e.preventDefault();
+        undoLastAction();
+      }
+    });
+
+    // ============================================================
+    // DELETE STUDENT FUNCTIONALITY (刪除學生)
+    // ============================================================
+    window.deleteSelectedStudent = function() {
+      const cls = getCurrentClass();
+      if (!cls || !selectedItem || !selectedItem.student) return;
+      const s = selectedItem.student;
+
+      if (!confirm(`確定要從班級名單中徹底刪除【${s.name}】嗎？\n(提示：若刪除錯誤，可點擊「↩️ Undo」還原)`)) return;
+
+      pushHistory();
+
+      if (selectedItem.sourceType === "group") {
+        const group = cls.groups.find(g => g.id === selectedItem.groupId);
+        if (group) {
+          const idx = group.students.findIndex(st => st.id === s.id);
+          if (idx >= 0) group.students.splice(idx, 1);
+        }
+      } else if (selectedItem.sourceType === "grid") {
+        delete cls.seats[selectedItem.coord];
+      } else if (selectedItem.sourceType === "unassigned") {
+        cls.unassigned.splice(selectedItem.index, 1);
+      }
+
+      clearSelection();
+      saveState();
+      renderTabs();
+      renderCurrentClass();
+      showToast(`已成功刪除學生【${s.name}】`);
+    };
+
+    window.deleteStudentFromUnassigned = function(event, index) {
+      if (event) event.stopPropagation();
+      const cls = getCurrentClass();
+      if (!cls || !cls.unassigned || !cls.unassigned[index]) return;
+      const s = cls.unassigned[index];
+
+      if (!confirm(`確定要從此班級名單徹底刪除【${s.name}】嗎？`)) return;
+
+      pushHistory();
+      cls.unassigned.splice(index, 1);
+      saveState();
+      renderTabs();
+      renderCurrentClass();
+      showToast(`已刪除學生【${s.name}】`);
+    };
+
+    // ============================================================
+    // PARK TO UNASSIGNED (暫存至未分配)
+    // ============================================================
+    window.parkSelectedStudentToUnassigned = function() {
+      const cls = getCurrentClass();
+      if (!cls || !selectedItem || !selectedItem.student) return;
+      const s = selectedItem.student;
+
+      pushHistory();
+
+      if (selectedItem.sourceType === "group") {
+        const group = cls.groups.find(g => g.id === selectedItem.groupId);
+        if (group) {
+          const idx = group.students.findIndex(st => st.id === s.id);
+          if (idx >= 0) {
+            const [student] = group.students.splice(idx, 1);
+            if (!cls.unassigned) cls.unassigned = [];
+            cls.unassigned.push(student);
+            showToast(`已將【${student.name}】暫存至未分配區！`);
+          }
+        }
+      } else if (selectedItem.sourceType === "grid") {
+        const student = cls.seats[selectedItem.coord];
+        if (student) {
+          delete cls.seats[selectedItem.coord];
+          if (!cls.unassigned) cls.unassigned = [];
+          cls.unassigned.push(student);
+          showToast(`已將【${student.name}】暫存至未分配區！`);
+        }
+      }
+
+      clearSelection();
+      saveState();
+      renderTabs();
+      renderCurrentClass();
+    };
+
+    window.handleUnassignedCardClick = function(event) {
+      if (selectedItem && selectedItem.student) {
+        parkSelectedStudentToUnassigned();
+      }
+    };
+
+    window.handleUnassignedCardDragOver = function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const card = document.getElementById("unassignedCard");
+      if (card) card.classList.add("drag-target");
+    };
+
+    window.handleUnassignedCardDragLeave = function(e) {
+      const card = document.getElementById("unassignedCard");
+      if (card) card.classList.remove("drag-target");
+    };
+
     // Initialize App
     function init() {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -2573,7 +2796,7 @@
           const isSelected = selectedItem && selectedItem.student && selectedItem.student.id === s.id;
           const sCard = document.createElement("div");
           sCard.className = `student-card ${isSelected ? 'selected' : ''} status-${s.status || 'present'}`;
-          sCard.draggable = (interactionMode === "drag");
+          sCard.draggable = true;
           sCard.dataset.studentId = s.id;
 
           let tagHtml = "";
@@ -2663,7 +2886,7 @@
           } else if (student) {
             const isSelected = selectedItem && selectedItem.coord === coord;
             cell.className = `desk-cell ${isSelected ? 'selected' : ''} status-${student.status || 'present'}`;
-            cell.draggable = (interactionMode === 'drag');
+            cell.draggable = true;
 
             let tagHtml = "";
             if (student.tag) {
@@ -3265,6 +3488,7 @@
 
     function handleGroupDrop(e, targetGroupId) {
       e.preventDefault();
+      pushHistory();
       document.querySelectorAll(".group-card").forEach(c => c.classList.remove("drag-target"));
 
       const cls = getCurrentClass();
@@ -3319,9 +3543,26 @@
         if (!selectedItem) {
           selectedItem = { student, groupId, sourceType: 'group' };
           document.getElementById("selectionBanner").style.display = "flex";
-          document.getElementById("selectionBannerText").textContent = `💡 Selected ${student.name}. Click another student to swap.`;
+          document.getElementById("selectionBannerText").textContent = `💡 Selected ${student.name}. Click another seat/student to swap, or park/delete below.`;
+          const pPrompt = document.getElementById("clickToParkPrompt"); if (pPrompt) pPrompt.style.display = "block";
           renderCurrentClass();
         } else {
+          if (selectedItem.sourceType === "unassigned") {
+          if (selectedItem.sourceType === "unassigned") {
+            pushHistory();
+            const [unassignedStudent] = cls.unassigned.splice(selectedItem.index, 1);
+            const groupB = cls.groups.find(g => g.id === groupId);
+            const idxB = groupB.students.findIndex(s => s.id === student.id);
+            const [swappedStudent] = groupB.students.splice(idxB, 1, unassignedStudent);
+            cls.unassigned.push(swappedStudent);
+            clearSelection();
+            saveState();
+            renderTabs();
+            renderCurrentClass();
+            showToast(`互換成功：【${unassignedStudent.name}】入座，【${swappedStudent.name}】移至未分配`);
+            return;
+          }
+          }
           if (selectedItem.student.id === student.id) {
             clearSelection();
             return;
@@ -3425,6 +3666,7 @@
 
     function handleGridDrop(e, targetCoord) {
       e.preventDefault();
+      pushHistory();
       const cls = getCurrentClass();
       if (!cls || !draggedItem) return;
 
@@ -3476,15 +3718,33 @@
         return;
       }
 
-      if (interactionMode === "click") {
-        if (!selectedItem) {
-          if (type === "occupied") {
+      // Allow click actions in both click and drag modes for highest reliability
+      if (!selectedItem) {
+        if (type === "occupied") {
             selectedItem = { coord, student: cls.seats[coord], sourceType: 'grid' };
             document.getElementById("selectionBanner").style.display = "flex";
-            document.getElementById("selectionBannerText").textContent = `💡 Selected ${selectedItem.student.name}. Click target seat to swap or move.`;
+            document.getElementById("selectionBannerText").textContent = `💡 Selected ${selectedItem.student.name}. Click target seat/student to swap, or park/delete below.`;
+            const pPrompt2 = document.getElementById("clickToParkPrompt"); if (pPrompt2) pPrompt2.style.display = "block";
             renderCurrentClass();
           }
         } else {
+                    if (selectedItem.sourceType === "unassigned") {
+            pushHistory();
+            const [unassignedStudent] = cls.unassigned.splice(selectedItem.index, 1);
+            const existingStudent = cls.seats[coord];
+            cls.seats[coord] = unassignedStudent;
+            if (existingStudent) {
+              cls.unassigned.push(existingStudent);
+              showToast(`互換成功：【${unassignedStudent.name}】入座，【${existingStudent.name}】移至未分配`);
+            } else {
+              showToast(`【${unassignedStudent.name}】已成功入座！`);
+            }
+            clearSelection();
+            saveState();
+            renderTabs();
+            renderCurrentClass();
+            return;
+          }
           if (selectedItem.coord === coord) {
             clearSelection();
             return;
@@ -3511,11 +3771,11 @@
           saveState();
           renderCurrentClass();
         }
-      }
     }
 
     function cycleGridAttendance(coord) {
       const cls = getCurrentClass();
+      pushHistory();
       if (!cls || !cls.seats[coord]) return;
       const s = cls.seats[coord];
       const statuses = ["present", "absent", "late", "leave"];
@@ -3563,7 +3823,31 @@
       renderCurrentClass();
     }
 
-    function removeUnassignedStudent(index) {
+    
+    window.handleUnassignedClick = function(student, index) {
+      const cls = getCurrentClass();
+      if (!cls) return;
+
+      if (!selectedItem) {
+        selectedItem = { student, index, sourceType: "unassigned" };
+        const banner = document.getElementById("selectionBanner");
+        if (banner) banner.style.display = "flex";
+        const bannerText = document.getElementById("selectionBannerText");
+        if (bannerText) bannerText.textContent = `💡 已選取未分配學生【${student.name}】。點擊任何小組或座位即可入座，或點右側「🗑️ 刪除」。`;
+        const pPrompt = document.getElementById("clickToParkPrompt");
+        if (pPrompt) pPrompt.style.display = "none";
+        renderCurrentClass();
+      } else {
+        // If a student from a seat/group was already selected, park them to unassigned!
+        parkSelectedStudentToUnassigned();
+      }
+    };
+
+    window.removeUnassignedStudent = function(index) {
+      deleteStudentFromUnassigned(null, index);
+    };
+
+    function _oldRemoveUnassignedStudent(index) {
       const cls = getCurrentClass();
       if (!cls || !cls.unassigned) return;
       const [removed] = cls.unassigned.splice(index, 1);
@@ -3639,8 +3923,11 @@
 
     function clearSelection() {
       selectedItem = null;
-      document.getElementById("selectionBanner").style.display = "none";
-      document.querySelectorAll(".student-card, .desk-cell").forEach(c => c.classList.remove("selected"));
+      const banner = document.getElementById("selectionBanner");
+      if (banner) banner.style.display = "none";
+      const parkPrompt = document.getElementById("clickToParkPrompt");
+      if (parkPrompt) parkPrompt.style.display = "none";
+      document.querySelectorAll(".student-card, .desk-cell, .unassigned-item").forEach(c => c.classList.remove("selected"));
     }
 
     function handleSearch(q) {
@@ -3664,6 +3951,7 @@
 
     function markAllPresent() {
       const cls = getCurrentClass();
+      pushHistory();
       if (!cls) return;
       if (cls.layoutConfig && cls.layoutConfig.type === "pods") {
         (cls.groups || []).forEach(g => (g.students || []).forEach(s => s.status = "present"));
